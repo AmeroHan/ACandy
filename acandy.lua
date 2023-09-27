@@ -23,7 +23,7 @@ end
 -- ## Fragment
 --
 -- A Fragment is an array-like table without `__tagName` property, no matter
--- whether it's metatable is `fragmentMetatable`.
+-- whether its metatable is `fragmentMetatable`.
 
 
 --- Flat and concat the Fragment, retruns string.
@@ -144,7 +144,7 @@ end
 function elementMetatable.__newindex(t, k, v)
 	if 'tagName' == k then
 		-- e.g. elem.tagName = 'div'
-		
+
 		if not isValidXmlName(v) then
 			error('Invalid tag name: ' .. v, 2)
 		end
