@@ -1,9 +1,18 @@
+--- ACandy
+---
+--- A module for building HTML.
 --- 一个用于构建HTML的模块。
----@author: AmeroHan 2023-09-26
+---
+--- Version requirement: Lua 5.1 or higher
+---
+--- GitHub: https://github.com/AmeroHan/ACandy
+--- MIT License
+--- Copyright (c) 2023 AmeroHan
 
 local elementConfig = require('acandy_elem_config')
 local voidElements = elementConfig.voidElements
 local htmlElements = elementConfig.htmlElements
+
 
 local htmlEncodeMap = {
 	['<'] = '&lt;',

@@ -1,8 +1,8 @@
 local A = require "acandy"
 
----------------
--- EXAMPLE 1 --
----------------
+-----------------
+--  EXAMPLE 1  --
+-----------------
 
 local example1 = (
 	A.Fragment {
@@ -52,9 +52,9 @@ print(example1)
 ]]
 
 
----------------
--- EXAMPLE 2 --
----------------
+-----------------
+--  EXAMPLE 2  --
+-----------------
 
 local Card = function(param)
 	return A.div { class = "card",
@@ -80,9 +80,9 @@ print(example2)
 ]]
 
 
----------------
--- EXAMPLE 3 --
----------------
+-----------------
+--  EXAMPLE 3  --
+-----------------
 
 local example3 = A.div()
 print(example3)
