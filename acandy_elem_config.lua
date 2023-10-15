@@ -1,6 +1,6 @@
 local config = {}
 
-config.htmlElements = {
+config.HTML_ELEMS = {
 	a = true, abbr = true, acronym = true,
 	address = true, area = true, article = true,
 	aside = true, audio = true, b = true,
@@ -48,7 +48,7 @@ config.htmlElements = {
 	wbr = true, xmp = true
 }
 
-config.voidElements = {
+config.VOID_ELEMS = {
 	area = true, base = true, br = true,
 	col = true, embed = true, hr = true,
 	img = true, input = true, link = true,

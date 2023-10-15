@@ -1,22 +1,22 @@
-local A = require "acandy"
+local a = require("acandy")
 
 -----------------
 --  EXAMPLE 1  --
 -----------------
 
 local example1 = (
-	A.Fragment {
+	a.Fragment {
 		-- String is accepted as argument.
-		A.h2 "Hello!",
+		a.h2 "Hello!",
 		-- Table is accepted as argument.
 		-- Map part represents attributes, array part represents children.
-		A.div { class = "container", id = "container",
-			A.p {
-				"There is ", A.strong "an example of strong", ".",
-				A.br,  -- Putting a constructer without calling is allowed.
+		a.div { class = "container", id = "container",
+			a.p {
+				"There is ", a.strong "an example of strong", ".",
+				a.br,  -- Putting a constructer without calling is allowed.
 				"This is the second line."
 			},
-			A.ul {
+			a.ul {
 				-- Function is also allowed, which may return an element,
 				-- an array, a string, etc.
 				function ()
@@ -25,7 +25,7 @@ local example1 = (
 					}
 					local out = {}
 					for _, name in ipairs(names) do
-						table.insert(out, A.li(name))
+						table.insert(out, a.li(name))
 					end
 					return out
 				end,
@@ -57,16 +57,16 @@ print(example1)
 -----------------
 
 local Card = function(param)
-	return A.div { class = "card",
-		A.h2 { param.name },
-		A.img { width = 100, src = param.avater },
-		A.Fragment(param),
+	return a.div { class = "card",
+		a.h2 { param.name },
+		a.img { width = 100, src = param.avater },
+		a.Fragment(param),
 	}
 end
 
 local example2 = Card { avater = "https://example.com/", name = "amero",
-	A.p "Custom component example.",
-	A.p "Use Fragment to receive children from param.",
+	a.p "Custom component example.",
+	a.p "Use Fragment to receive children from param.",
 }
 
 print(example2)
@@ -84,15 +84,15 @@ print(example2)
 --  EXAMPLE 3  --
 -----------------
 
-local example3 = A.div()
+local example3 = a.div()
 print(example3)
 --> <div></div>
 
 -- Set tagName, attributes and children.
 example3.tagName = "ol"
 example3.id = "example3"
-example3[1] = A.li "Item 1"
-example3[2] = A.li "Item 2"
+example3[1] = a.li "Item 1"
+example3[2] = a.li "Item 2"
 print(example3)
 --> <ol id="example3"><li>Item 1</li><li>Item 2</li></ol>
 
@@ -107,3 +107,55 @@ print(example3[1])
 example3.tagName = "br"
 print(example3)
 --> <br id="example3">
+
+
+-----------------
+--  EXAMPLE 4  --
+-----------------
+
+local height_weights = {
+	{ name = 'Alice'  , height = 160, weight = 50 },
+	{ name = 'Bob'    , height = 180, weight = 70 },
+	{ name = 'Charlie', height = 170, weight = 60 },
+}
+
+local example4 = a.table {
+	a.tr {
+		a.th "Name", a.th "Height", a.th "Weight",
+	},
+	a.iter(
+		function(_, item)
+			return a.tr {
+				a.td(item.name),
+				a.td(item.height..' cm'),
+				a.td(item.weight..' kg'),
+			}
+		end,
+		ipairs(height_weights)
+	)
+}
+print(example4)
+--[[ Output (formated):
+<table>
+	<tr>
+		<th>Name</th>
+		<th>Height</th>
+		<th>Weight</th>
+	</tr>
+	<tr>
+		<td>Alice</td>
+		<td>160 cm</td>
+		<td>50 kg</td>
+	</tr>
+	<tr>
+		<td>Bob</td>
+		<td>180 cm</td>
+		<td>70 kg</td>
+	</tr>
+	<tr>
+		<td>Charlie</td>
+		<td>170 cm</td>
+		<td>60 kg</td>
+	</tr>
+</table>
+]]
