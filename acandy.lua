@@ -180,7 +180,7 @@ end
 
 --- Return tag name, attribute or child node depending on the key.
 local function get_elem_prop(elem, k)
-	if k == 'tag_name' then
+	if k == 'tag_name' or k == 'tagname' then
 		-- e.g. `elem.tag_name`
 		return rawget(elem, '__tag_name')
 	elseif type(k) == 'string' then
@@ -240,7 +240,7 @@ end
 
 --- Assign to tag name, attribute or child node depending on the key.
 local function set_elem_prop(elem, k, v)
-	if k == 'tag_name' then
+	if k == 'tag_name' or k == 'tagname' then
 		-- e.g. elem.tag_name = 'div'
 
 		if not utils.is_valid_xml_name(v) then
