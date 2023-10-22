@@ -1,5 +1,8 @@
 local a = require("acandy")
 
+-- print(a.div{class="container", id="container", a.p{"Hello, world!"}})
+-- print(a.div())
+
 -----------------
 --  EXAMPLE 1  --
 -----------------
@@ -88,8 +91,8 @@ local example3 = a.div()
 print(example3)
 --> <div></div>
 
--- Set tagName, attributes and children.
-example3.tagName = "ol"
+-- Set tag_name, attributes and children.
+example3.tag_name = "ol"
 example3.id = "example3"
 example3[1] = a.li "Item 1"
 example3[2] = a.li "Item 2"
@@ -104,7 +107,7 @@ print(example3[1])
 --> <li>Item 2</li>
 
 -- Children will be removed when changed to a void element.
-example3.tagName = "br"
+example3.tag_name = "br"
 print(example3)
 --> <br id="example3">
 
@@ -159,3 +162,14 @@ print(example4)
 	</tr>
 </table>
 ]]
+
+
+-----------------
+--  EXAMPLE 5  --
+-----------------
+
+local example5 = a.div['#my-div cls1 cls2'] {
+	a.p "You know what it is.",
+}
+print(example5)
+--> <div id="my-div" class="cls1 cls2"><p>You know what it is.</p></div>
