@@ -1,13 +1,26 @@
---- ACandy
----
---- A module for building HTML.
---- 一个用于构建HTML的模块。
----
---- Version requirement: Lua 5.1 or higher
----
---- GitHub: https://github.com/AmeroHan/ACandy
---- MIT License
---- Copyright (c) 2023 AmeroHan
+--[[
+# ACandy
+
+A module for building HTML.
+一个用于构建HTML的模块。
+
+Version requirement: Lua 5.1 or higher
+
+GitHub: https://github.com/AmeroHan/ACandy
+MIT License
+Copyright (c) 2023 AmeroHan
+]]
+
+local type = type
+local pairs = pairs
+local format = string.format
+local insert = table.insert
+local ipairs = ipairs
+local rawget = rawget
+local rawset = rawset
+local tostring = tostring
+local setmetatable = setmetatable
+
 
 local VOID_ELEMS, HTML_ELEMS
 do
@@ -18,33 +31,34 @@ end
 local utils = require('acandy_utils')
 
 
--- ## Fragment
---
--- A Fragment is an array-like table without `__tag_name` property, no matter
--- whether its metatable is `fragment_mt`.
+--[[
+## Fragment
 
+A Fragment is an array-like table with metatable `Fragment_mt`.
+]]
 
 --- Flat and concat the Fragment, retruns string.
---- @param frag table
---- @return string
+---@param frag table
+---@return string
 local function concat_fragment(frag)
 	local children = {}
 
 	local function append_serialized(node)
-		if type(node) == 'table' and not rawget(node, '__tag_name') then
+		local node_type = type(node)
+		if node_type == 'table' and not rawget(node, '__tag_name') then
 			-- Fragment
 			for _, child_node in ipairs(node) do
 				append_serialized(child_node)
 			end
-		elseif type(node) == 'function' then
+		elseif node_type == 'function' then
 			-- Generator, Constructor
 			append_serialized(node())
-		elseif type(node) == 'string' then
+		elseif node_type == 'string' then
 			-- string
-			table.insert(children, utils.html_encode(node))
+			insert(children, utils.html_encode(node))
 		else
 			-- Others: Element, boolean, number
-			table.insert(children, tostring(node))
+			insert(children, tostring(node))
 		end
 	end
 
@@ -52,18 +66,27 @@ local function concat_fragment(frag)
 	return table.concat(children)
 end
 
+
 --- Metatable used by Fragment object.
-local Fragment_mt = {}
-Fragment_mt.__tostring = concat_fragment
-Fragment_mt.__index = {
-	insert = table.insert,
-	remove = table.remove,
-	sort = table.sort
+local Fragment_mt = {
+	__tostring = concat_fragment,
+	__index = {
+		concat = table.concat,
+		insert = table.insert,
+		---@diagnostic disable-next-line: deprecated
+		maxn = table.maxn,  -- Lua 5.1 only
+		move = table.move,
+		remove = table.remove,
+		sort = table.sort,
+		---@diagnostic disable-next-line: deprecated
+		unpack = table.unpack or unpack,
+	},
 }
 
+
 --- Constructor of Fragment.
---- @param children table
---- @return table
+---@param children table
+---@return table
 local function Fragment(children)
 	-- 浅拷贝children，避免影响children的元表
 	local frag = {}
@@ -74,51 +97,85 @@ local function Fragment(children)
 end
 
 
-
 --[[
 ## Element
 
-An `Element` is a object which can read/assign tag name, attributes and child nodes, allowing
-to be converted to HTML code by using `tostring(element)`.
-Elements contains properties, which are tag name, attributes and child nodes. Properties can be
-read/assigned by indexing/assigning the element, like `elem.tag_name = 'p'`, `elem[1]` or
-`elem.class`.
+An Element is an object which can read tag name, attributes and child nodes,
+allowing to be converted to HTML code by using `tostring(element)`.
+Elements contains properties, which are tag name, attributes and child nodes.
+Properties can be read/assigned by indexing/assigning the element, like
+`elem.tag_name = 'p'`, `elem[1]` or `elem.class`.
 
-A `CleanElement` is an Element without setting any properties except tag name, like `acandy.div`.
-It can be cached and reused by module. It can also turn to BuildingElement or BuiltElement.
-It can be called to set properties, like `acandy.div { ... }`.
+### BasicElement
 
-A `BuildingElement` is an Element derived from attribute shorthand syntex.
-The shorthand is a string of space-separated class names and id, and the syntex is to put shorthand
-inside the brackets followed after the tag name, like `acandy.div['#id cls1 cls2']`.
-Similar to `CleanElement`, `BuildingEmments` can be called to additionnaly set properties, like
-`acandy.div['#id cls1 cls2'] { ... }`.
+A BasicElement is an Element without any properties except tag name, e.g.
+`acandy.div`. It is unmutable and can be cached and reused.
 
-A `BuiltElement` is an Element which derived from `CleanElement` or `BuildingElement` by calling
-it, like `acandy.div { ... }`, which provides it with properties. Although named "Built", it is
-still mutable. Its properties can be changed by assigning, like `elem[1] = 'Hello!'` or
-`elem.class = 'content'`.
+Indexing a BasicElement would return a BuildingElement, and calling it would
+return a BuiltElement. Both methods would not change the element itself.
+
+```lua
+local basic_div = acandy.div
+```
+
+### BuildingElement
+
+A BuildingElement is an Element derived from attribute shorthand syntex. The
+shorthand is a string of id and space-separated class names, and the syntex is
+to index the BasicElement with a shorthand string, i.e. to put it inside the
+brackets followed after the tag name, e.g. `acandy.div['#id cls1 cls2']`.
+
+```lua
+local building_div = acandy.div['#id cls1 cls2']
+```
+
+Similar to BasicElements, a BuildingElement can be called to get a
+BuiltElement with properties set.
+
+Setting properties of a BasicElement would result in the element being
+converted to BuiltElement.
+
+```lua
+local my_div = acandy.div['#id cls1 cls2']  -- BuildingElement
+my_div.id = "new-id"
+-- now `my_div` becomes a BuiltElement
+```
+
+### BuiltElement
+
+A BuiltElement is an Element derived from a BasicElement or a BuildingElement by
+calling it, which would return the BuiltElement with properties set.
+
+```lua
+local built_pre1 = acandy.pre {
+	class = 'lang-lua';
+	"print('Hello, ACandy!')",
+}
+
+local built_pre2 = acandy.pre['lang-lua'] "print('Hello, ACandy!')"
+```
+
+Although named "Built", it is still mutable. Its properties can be changed by
+assigning.
 ]]
 
-local CleanElement_mt
+local BasicElement_mt
 local BuildingElement_mt
 local BuiltElement_mt
 
-local clean_elems_cache = {}
 
-
-local function new_clean_elem(tag_name)
+local function new_basic_elem(tag_name)
 	local str
 	if VOID_ELEMS[tag_name] then
-		str = string.format('<%s>', tag_name)
+		str = format('<%s>', tag_name)
 	else
-		str = string.format('<%s></%s>', tag_name, tag_name)
+		str = format('<%s></%s>', tag_name, tag_name)
 	end
 	local elem = {
 		__tag_name = tag_name,  ---@type string
 		__string = str,  ---@type string
 	}
-	return setmetatable(elem, CleanElement_mt)
+	return setmetatable(elem, BasicElement_mt)
 end
 
 local function new_building_elem(tag_name, attrs)
@@ -150,11 +207,11 @@ local function elem_to_string(elem)
 		if v == true then
 			-- Boolean attributes
 			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
-			table.insert(attrs, ' '..k)
+			insert(attrs, ' '..k)
 		elseif v then  -- Exclude the case `v == false`.
-			table.insert(
+			insert(
 				attrs,
-				string.format(' %s="%s"', k, utils.html_encode(tostring(v)))
+				format(' %s="%s"', k, utils.html_encode(tostring(v)))
 			)
 		end
 	end
@@ -163,13 +220,13 @@ local function elem_to_string(elem)
 	-- Retrun without children or close tag when being a void element.
 	-- Void element: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
 	if VOID_ELEMS[tag_name] then
-		return string.format('<%s%s>', tag_name, attrs)
+		return format('<%s%s>', tag_name, attrs)
 	end
 
 	-- Format children.
 	local children = concat_fragment(rawget(elem, '__children'))
 
-	return string.format('<%s%s>%s</%s>', tag_name, attrs, children, tag_name)
+	return format('<%s%s>%s</%s>', tag_name, attrs, children, tag_name)
 end
 
 
@@ -302,18 +359,18 @@ local function set_elem_shorthand_attrs(clean_elem, shorthand_attrs)
 end
 
 
-CleanElement_mt = {
+BasicElement_mt = {
 	__tostring = clean_elem_to_string,
-	__index = set_elem_shorthand_attrs,    --> BuildingElement
+	__index = set_elem_shorthand_attrs,   --> BuildingElement
 	__newindex = function() error('Assigning properties is not allowed on clean element') end,
-	__call = build_elem_with_props,        --> BuiltElement
+	__call = build_elem_with_props,       --> BuiltElement
 }
 
 BuildingElement_mt = {
 	__tostring = elem_to_string,
 	__index = get_elem_prop,
-	__newindex = set_building_elem_prop,   -- metatable: CleanElement_mt -> BuiltElement_mt
-	__call = build_elem_with_props,        --> BuiltElement
+	__newindex = set_building_elem_prop,  -- metatable: BasicElement_mt -> BuiltElement_mt
+	__call = build_elem_with_props,       --> BuiltElement
 }
 
 BuiltElement_mt = {
@@ -412,11 +469,14 @@ end
 -- Metatable used by this module.
 local acandy_mt = {}
 
+
+local basic_elems_cache = {}
+
 --- When indexing a tag name, returns a constructor of that element.
---- @param t table
---- @param k string
---- @return fun(param?: table | string): table | nil
-function acandy_mt.__index(t, k)
+---@param _t table
+---@param k string
+---@return fun(param?: table | string): table | nil
+function acandy_mt.__index(_t, k)
 	if not utils.is_valid_xml_name(k) then
 		error('Invalid tag name: '..k, 2)
 	end
@@ -426,10 +486,10 @@ function acandy_mt.__index(t, k)
 		k = lower_k
 	end
 
-	if not clean_elems_cache[k] then
-		clean_elems_cache[k] = new_clean_elem(k)
+	if not basic_elems_cache[k] then
+		basic_elems_cache[k] = new_basic_elem(k)
 	end
-	return clean_elems_cache[k]
+	return basic_elems_cache[k]
 end
 
 
