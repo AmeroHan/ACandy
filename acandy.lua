@@ -365,14 +365,12 @@ BasicElement_mt = {
 	__newindex = function() error('Assigning properties is not allowed on clean element') end,
 	__call = build_elem_with_props,       --> BuiltElement
 }
-
 BuildingElement_mt = {
 	__tostring = elem_to_string,
 	__index = get_elem_prop,
 	__newindex = set_building_elem_prop,  -- metatable: BasicElement_mt -> BuiltElement_mt
 	__call = build_elem_with_props,       --> BuiltElement
 }
-
 BuiltElement_mt = {
 	__tostring = elem_to_string,
 	__index = get_elem_prop,
@@ -380,96 +378,51 @@ BuiltElement_mt = {
 }
 
 
-
---[[
-## iter()
-
-Iterate over the return values of an iterator and call `user_func` with them.
-Returns an array whose items are the non-nil value returned by `user_func`.
-
-```lua
-local function user_func(__1__)
-	-- Do something with __1__...
-	return __3__
-end
-local array = iter(user_func, __2__)
-```
-
-is approximately equivalent to
-
-```lua
-local array = {}
-for __1__ in __2__ do
-	-- Do something with __1__...
-	-- and get __3__.
-	table.insert(array, __3__)
-end
-```
-
-except that if `user_func` returns multiple values, all of them are inserted into `array`,
-while nil values being ignored.
-
-## Example
-
-```lua
-local array = iter(
-	function(i, v)
-		return i, v
-	end,
-	ipairs({ 'a', 'b', 'c' })
-)
-```
-
-Now `array` is
-
-```lua
-{ 1, 'a', 2, 'b', 3, 'c' }
-```
-]]
-local function iter(user_func, iter_func, state, ctrl_var, closing_val)
-	local insert = table.insert
-	local select = select
+--- Create a Fragment from a generator function.
+--- e.g.
+--- ```
+--- new_frag_from_yields(function(yield)
+---    for i = 1, 5 do
+---       yield(i)
+---    end
+--- end)  --> {1, 2, 3, 4, 5}
+--- ```
+---@param func fun(yield: fun(v: any))
+---@return table
+local function new_frag_from_yields(_self, func)
 	local result = {}
-
-	--- Insert non-nil values returned by `user_func` into `result`.
-	local function insert_non_nil_vals(...)
-		local n = select('#', ...)
-		for i = 1, n do
-			local v = select(i, ...)
-			if v ~= nil then
-				insert(result, v)
-			end
-		end
+	local function yield(v)
+		insert(result, v)
 	end
-
-	--- Deal with values returned by `iter_func`, like what `for` statement does.
-	local function iter_once(...)
-		ctrl_var = ...
-		if ctrl_var == nil then return false end
-
-		insert_non_nil_vals(user_func(...))
-		return true
-	end
-
-	while iter_once(iter_func(state, ctrl_var)) do
-		-- Do nothing.
-	end
-
+	func(yield)
 	return setmetatable(result, Fragment_mt)
-	-- For Lua 5.4+, `closing_val` is closed here.
-	-- See:
-	-- - The generic for loop
-	--   http://www.lua.org/manual/5.4/manual.html#3.3.5 
-	-- - To-be-closed Variable
-	--   http://www.lua.org/manual/5.4/manual.html#3.3.8
 end
 
+--- Create a Fragment from a generator function.
+--- e.g.
+--- ```
+--- acandy.from_yields(function(yield)
+---    for i = 1, 5 do
+---       yield(i)
+---    end
+--- end)  --> {1, 2, 3, 4, 5}
+--- ```
+--- or
+--- ```
+--- acandy.from_yields ^ function(yield)
+---    for i = 1, 5 do
+---       yield(i)
+---    end
+--- end  --> {1, 2, 3, 4, 5}
+--- ```
+local from_yields = setmetatable({}, {
+	__call = new_frag_from_yields,
+	__pow = new_frag_from_yields,
+})
 
 
 -- Metatable used by this module.
 local acandy_mt = {}
-
-
 local basic_elems_cache = {}
 
 --- When indexing a tag name, returns a constructor of that element.
@@ -492,10 +445,9 @@ function acandy_mt.__index(_t, k)
 	return basic_elems_cache[k]
 end
 
-
 local acandy = setmetatable({
 	Fragment = Fragment,
-	iter = iter
+	from_yields = from_yields,
 }, acandy_mt)
 
 return acandy

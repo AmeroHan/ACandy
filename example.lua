@@ -126,16 +126,15 @@ local example4 = a.table {
 	a.tr {
 		a.th "Name", a.th "Height", a.th "Weight",
 	},
-	a.iter(
-		function(_, item)
-			return a.tr {
+	a.from_yields ^ function(yield)
+		for _, item in ipairs(height_weights) do
+			yield(a.tr {
 				a.td(item.name),
 				a.td(item.height..' cm'),
 				a.td(item.weight..' kg'),
-			}
-		end,
-		ipairs(height_weights)
-	)
+			})
+		end
+	end,
 }
 print(example4)
 --[[ Output (formated):
