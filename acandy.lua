@@ -13,6 +13,7 @@ Copyright (c) 2023 AmeroHan
 
 local type = type
 local pairs = pairs
+local concat = table.concat
 local format = string.format
 local ipairs = ipairs
 local rawget = rawget
@@ -36,11 +37,12 @@ local utils = require('acandy_utils')
 A Fragment is an array-like table with metatable `Fragment_mt`.
 ]]
 
---- Flat and concat the Fragment, retruns string.
+
+--- Append the serialized string of the Fragment to `strs`.
+---@param strs table
 ---@param frag table
----@return string
-local function concat_fragment(frag)
-	local children = {}
+local function extend_strings_with_fragment(strs, frag)
+	if #frag == 0 then return end
 
 	local function append_serialized(node)
 		local node_type = type(node)
@@ -50,19 +52,27 @@ local function concat_fragment(frag)
 				append_serialized(child_node)
 			end
 		elseif node_type == 'function' then
-			-- Generator, Constructor
 			append_serialized(node())
 		elseif node_type == 'string' then
-			-- string
-			children[#children + 1] = utils.html_encode(node)
-		else
-			-- Others: Element, boolean, number
-			children[#children + 1] = tostring(node)
+			strs[#strs + 1] = utils.html_encode(node)
+		else  -- others: Element, boolean, number
+			strs[#strs + 1] = tostring(node)
 		end
 	end
 
 	append_serialized(frag)
-	return table.concat(children)
+end
+
+
+--- Flat and concat the Fragment, retruns string.
+---@param frag table
+---@return string
+local function concat_fragment(frag)
+	if #frag == 0 then return '' end
+
+	local children = {}
+	extend_strings_with_fragment(children, frag)
+	return concat(children)
 end
 
 
@@ -199,30 +209,37 @@ end
 --- Convert the object into HTML code.
 local function elem_to_string(elem)
 	local tag_name = rawget(elem, '__tag_name')
+	local result = {'<', tag_name}
 
-	-- Format attributes.
-	local attrs = {}
+	-- format attributes
 	for k, v in pairs(rawget(elem, '__attrs')) do
-		if v == true then
-			-- Boolean attributes
+		if v then  -- exclude the case `v == false`
+			result[#result + 1] = ' '
+			result[#result + 1] = k
+			-- exclude boolean attributes
 			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
-			attrs[#attrs + 1] = ' '..k
-		elseif v then  -- Exclude the case `v == false`.
-			attrs[#attrs + 1] = format(' %s="%s"', k, utils.html_encode(tostring(v)))
+			if v ~= true then
+				result[#result + 1] = '="'
+				result[#result + 1] = utils.attr_encode(tostring(v))
+				result[#result + 1] = '"'
+			end
 		end
 	end
-	attrs = table.concat(attrs)
+	result[#result + 1] = '>'
 
-	-- Retrun without children or close tag when being a void element.
-	-- Void element: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
+	-- retrun without children or close tag when being a void element
+	-- void element: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
 	if VOID_ELEMS[tag_name] then
-		return format('<%s%s>', tag_name, attrs)
+		return concat(result)
 	end
 
-	-- Format children.
-	local children = concat_fragment(rawget(elem, '__children'))
+	-- format children
+	extend_strings_with_fragment(result, rawget(elem, '__children'))
+	result[#result + 1] = '</'
+	result[#result + 1] = tag_name
+	result[#result + 1] = '>'
 
-	return format('<%s%s>%s</%s>', tag_name, attrs, children, tag_name)
+	return concat(result)
 end
 
 
@@ -257,7 +274,7 @@ local function build_elem_with_props(elem, props)
 	end
 
 	if VOID_ELEMS[tag_name] then
-		-- Void element, e.g. <br>, <img>
+		-- void element, e.g. <br>, <img>
 		if type(props) == 'table' then
 			for k, v in pairs(props) do
 				if type(k) == 'string' then
@@ -417,7 +434,7 @@ local from_yields = setmetatable({}, {
 })
 
 
--- Metatable used by this module.
+--- Metatable used by this module.
 local acandy_mt = {}
 local basic_elems_cache = {}
 

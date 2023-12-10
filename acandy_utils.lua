@@ -17,7 +17,7 @@ function utils.split(str, sep)
 end
 
 
-local HTML_ENCODE_MAP = {
+local ENTITY_ENCODE_MAP = {
 	['<'] = '&lt;',
 	['>'] = '&gt;',
 	['&'] = '&amp;',
@@ -25,16 +25,24 @@ local HTML_ENCODE_MAP = {
 }
 
 --- Replace `<`, `>`, `&` and `"` with entities.
---- @param str string
---- @return string
+---@param str string
+---@return string
+function utils.attr_encode(str)
+	return (s_gsub(str, '[<>&"]', ENTITY_ENCODE_MAP))
+end
+
+
+--- Replace `<`, `>`, `&` with entities.
+---@param str string
+---@return string
 function utils.html_encode(str)
-	return (s_gsub(str, '[<>&"]', HTML_ENCODE_MAP))
+	return (s_gsub(str, '[<>&]', ENTITY_ENCODE_MAP))
 end
 
 
 --- Retrun truthy value when `name` is a valid XML name, otherwise falsy value.
---- @param name any
---- @return string | boolean | nil
+---@param name any
+---@return string | boolean | nil
 function utils.is_valid_xml_name(name)
 	if type(name) ~= 'string' then
 		return false
@@ -43,9 +51,9 @@ function utils.is_valid_xml_name(name)
 end
 
 
---- @return table
+---@return table
 function utils.parse_shorthand_attrs(str)
-	-- Parse id.
+	-- parse id
 	local id = nil
 	str = string.gsub(str, '#([^%s#]*)', function(s)
 		if s == '' then
@@ -58,7 +66,7 @@ function utils.parse_shorthand_attrs(str)
 		return ''
 	end)
 
-	-- Parse class.
+	-- parse class
 	local class = s_gsub(str, '%s+', ' ')
 	if class == '' or class == ' ' then
 		class = nil
