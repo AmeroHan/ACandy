@@ -21,7 +21,6 @@ local rawset = rawset
 local tostring = tostring
 local setmetatable = setmetatable
 
-
 local VOID_ELEMS, HTML_ELEMS
 do
 	local element_config = require('acandy_elem_config')
@@ -29,6 +28,12 @@ do
 	HTML_ELEMS = element_config.HTML_ELEMS
 end
 local utils = require('acandy_utils')
+
+local SYM_LEAF = {}
+local SYM_ATTRS = {}
+local SYM_STRING = {}
+local SYM_CHILDREN = {}
+local SYM_TAG_NAME = {}
 
 
 --[[
@@ -46,7 +51,7 @@ local function extend_strings_with_fragment(strs, frag)
 
 	local function append_serialized(node)
 		local node_type = type(node)
-		if node_type == 'table' and not rawget(node, '__tag_name') then
+		if node_type == 'table' and not rawget(node, SYM_TAG_NAME) then
 			-- Fragment
 			for _, child_node in ipairs(node) do
 				append_serialized(child_node)
@@ -98,10 +103,7 @@ local Fragment_mt = {
 ---@return table
 local function Fragment(children)
 	-- 浅拷贝children，避免影响children的元表
-	local frag = {}
-	for i, v in ipairs(children) do
-		frag[i] = v
-	end
+	local frag = utils.shallow_icopy(children)
 	return setmetatable(frag, Fragment_mt)
 end
 
@@ -173,7 +175,7 @@ local BuildingElement_mt
 local BuiltElement_mt
 
 
-local function new_basic_elem(tag_name)
+local function BasicElement(tag_name)
 	local str
 	if VOID_ELEMS[tag_name] then
 		str = format('<%s>', tag_name)
@@ -181,38 +183,44 @@ local function new_basic_elem(tag_name)
 		str = format('<%s></%s>', tag_name, tag_name)
 	end
 	local elem = {
-		__tag_name = tag_name,  ---@type string
-		__string = str,  ---@type string
+		[SYM_TAG_NAME] = tag_name,  ---@type string
+		[SYM_STRING] = str,  ---@type string
 	}
 	return setmetatable(elem, BasicElement_mt)
 end
 
-local function new_building_elem(tag_name, attrs)
+local function BuildingElement(tag_name, attrs, leaf)
 	local elem = {
-		__tag_name = tag_name,  ---@type string
-		__attrs = attrs or {},  ---@type table
-		__children = not VOID_ELEMS[tag_name] and {} or nil,  ---@type table | nil
+		[SYM_TAG_NAME] = tag_name,  ---@type string
+		[SYM_ATTRS] = attrs or {},  ---@type table
+		[SYM_CHILDREN] = not VOID_ELEMS[tag_name] and {} or nil,  ---@type table | nil
+		[SYM_LEAF] = leaf,
 	}
 	return setmetatable(elem, BuildingElement_mt)
 end
 
-local function new_built_elem(tag_name, attrs, children)
+local function BuiltElement(tag_name, attrs, children)
 	local elem = {
-		__tag_name = tag_name,  ---@type string
-		__attrs = attrs,  ---@type table
-		__children = children,  ---@type table
+		[SYM_TAG_NAME] = tag_name,  ---@type string
+		[SYM_ATTRS] = attrs,  ---@type table
+		[SYM_CHILDREN] = children,  ---@type table | nil
 	}
 	return setmetatable(elem, BuiltElement_mt)
 end
 
 
+local function basic_elem_to_string(self)
+	return rawget(self, SYM_STRING)
+end
+
+
 --- Convert the object into HTML code.
-local function elem_to_string(elem)
-	local tag_name = rawget(elem, '__tag_name')
+local function elem_to_string(self)
+	local tag_name = rawget(self, SYM_TAG_NAME)
 	local result = {'<', tag_name}
 
 	-- format attributes
-	for k, v in pairs(rawget(elem, '__attrs')) do
+	for k, v in pairs(rawget(self, SYM_ATTRS)) do
 		if v then  -- exclude the case `v == false`
 			result[#result + 1] = ' '
 			result[#result + 1] = k
@@ -234,7 +242,7 @@ local function elem_to_string(elem)
 	end
 
 	-- format children
-	extend_strings_with_fragment(result, rawget(elem, '__children'))
+	extend_strings_with_fragment(result, rawget(self, SYM_CHILDREN))
 	result[#result + 1] = '</'
 	result[#result + 1] = tag_name
 	result[#result + 1] = '>'
@@ -243,35 +251,27 @@ local function elem_to_string(elem)
 end
 
 
-local function clean_elem_to_string(elem)
-	return rawget(elem, '__string')
-end
-
-
 --- Return tag name, attribute or child node depending on the key.
-local function get_elem_prop(elem, k)
+local function get_elem_prop(self, k)
 	if k == 'tag_name' or k == 'tagname' then
 		-- e.g. `elem.tag_name`
-		return rawget(elem, '__tag_name')
+		return rawget(self, SYM_TAG_NAME)
 	elseif type(k) == 'string' then
 		-- e.g. `elem.class`
-		return rawget(elem, '__attrs')[k]
+		return rawget(self, SYM_ATTRS)[k]
 	elseif type(k) == 'number' then
 		-- e.g. `elem[1]`
-		return rawget(elem, '__children')[k]
+		return rawget(self, SYM_CHILDREN)[k]
 	end
 
 	error('Element键类型只能是string或number', 2)
 end
 
 
-local function build_elem_with_props(elem, props)
-	local tag_name = rawget(elem, '__tag_name')
-	local attrs = rawget(elem, '__attrs') or {}
-	local new_attrs = {}
-	for k, v in pairs(attrs) do
-		new_attrs[k] = v;
-	end
+local function new_built_elem_by_props(elem, props)
+	local tag_name = rawget(elem, SYM_TAG_NAME)
+	local attrs = rawget(elem, SYM_ATTRS) or {}
+	local new_attrs = utils.shallow_copy(attrs)
 
 	if VOID_ELEMS[tag_name] then
 		-- void element, e.g. <br>, <img>
@@ -285,7 +285,7 @@ local function build_elem_with_props(elem, props)
 				end
 			end
 		end
-		return new_built_elem(tag_name, new_attrs)
+		return BuiltElement(tag_name, new_attrs)
 	end
 
 	local new_children = {}
@@ -304,15 +304,14 @@ local function build_elem_with_props(elem, props)
 		new_children[1] = props
 	end
 
-	return new_built_elem(tag_name, new_attrs, new_children)
+	return BuiltElement(tag_name, new_attrs, new_children)
 end
 
 
 --- Assign to tag name, attribute or child node depending on the key.
-local function set_elem_prop(elem, k, v)
+local function set_elem_prop(self, k, v)
 	if k == 'tag_name' or k == 'tagname' then
 		-- e.g. elem.tag_name = 'div'
-
 		if not utils.is_valid_xml_name(v) then
 			error('Invalid tag name: '..v, 2)
 		end
@@ -322,44 +321,45 @@ local function set_elem_prop(elem, k, v)
 			v = lower
 		end
 
-		if rawget(elem, '__tag_name') == v then return end
+		if rawget(self, SYM_TAG_NAME) == v then return end
 
 		-- 根据元素类型，创建/删除子节点
-		if VOID_ELEMS[v] and rawget(elem, '__children') then
-			rawset(elem, '__children', nil)
-		elseif not (VOID_ELEMS[v] or rawget(elem, '__children')) then
-			rawset(elem, '__children', {})
+		if VOID_ELEMS[v] and rawget(self, SYM_CHILDREN) then
+			rawset(self, SYM_CHILDREN, nil)
+		elseif not (VOID_ELEMS[v] or rawget(self, SYM_CHILDREN)) then
+			rawset(self, SYM_CHILDREN, {})
 		end
 
 		-- 为tag_name赋值
-		rawset(elem, '__tag_name', v)
+		rawset(self, SYM_TAG_NAME, v)
 	elseif type(k) == 'string' then
 		-- e.g. elem.class = 'content'
 		if not utils.is_valid_xml_name(k) then
 			error('Invalid attribute name: '..k, 2)
 		end
-		rawget(elem, '__attrs')[k] = v
+		rawget(self, SYM_ATTRS)[k] = v
 	elseif type(k) == 'number' then
 		-- e.g. elem[1] = P 'Lorem ipsum dolor sit amet...'
 		if nil == v then
-			table.remove(rawget(elem, '__children'), k)
+			table.remove(rawget(self, SYM_CHILDREN), k)
 		else
-			rawget(elem, '__children')[k] = v
+			rawget(self, SYM_CHILDREN)[k] = v
 		end
 	else
 		error('Element键类型只能是string或number', 2)
 	end
 end
 
-local function set_building_elem_prop(elem, k, v)
-	set_elem_prop(elem, k, v)
-	setmetatable(elem, BuiltElement_mt)
+
+local function set_building_elem_prop(self, k, v)
+	set_elem_prop(self, k, v)
+	setmetatable(self, BuiltElement_mt)
 end
 
 
 --- Sementic sugar for setting attributes.
 --- e.g. `local elem = acandy.div['#id cls1 cls2']`
-local function set_elem_shorthand_attrs(clean_elem, shorthand_attrs)
+local function new_building_elem_by_shorthand_attrs(self, shorthand_attrs)
 	local attrs
 	if type(shorthand_attrs) == 'string' then
 		attrs = utils.parse_shorthand_attrs(shorthand_attrs)
@@ -368,21 +368,23 @@ local function set_elem_shorthand_attrs(clean_elem, shorthand_attrs)
 	else
 		error('Invalid attributes: '..tostring(shorthand_attrs), 2)
 	end
-	return new_building_elem(rawget(clean_elem, '__tag_name'), attrs)
+	return BuildingElement(rawget(self, SYM_TAG_NAME), attrs)
 end
 
 
 BasicElement_mt = {
-	__tostring = clean_elem_to_string,
-	__index = set_elem_shorthand_attrs,   --> BuildingElement
-	__newindex = function() error('Assigning properties is not allowed on clean element') end,
-	__call = build_elem_with_props,       --> BuiltElement
+	__tostring = basic_elem_to_string,
+	__index = new_building_elem_by_shorthand_attrs,  --> BuildingElement
+	__call = new_built_elem_by_props,  --> BuiltElement
+	__newindex = function()
+		error('Assigning properties is not allowed on basic element')
+	end,
 }
 BuildingElement_mt = {
 	__tostring = elem_to_string,
 	__index = get_elem_prop,
 	__newindex = set_building_elem_prop,  -- metatable: BasicElement_mt -> BuiltElement_mt
-	__call = build_elem_with_props,       --> BuiltElement
+	__call = new_built_elem_by_props,  --> BuiltElement
 }
 BuiltElement_mt = {
 	__tostring = elem_to_string,
@@ -438,11 +440,11 @@ local from_yields = setmetatable({}, {
 local acandy_mt = {}
 local basic_elems_cache = {}
 
+
 --- When indexing a tag name, returns a constructor of that element.
----@param _t table
 ---@param k string
 ---@return fun(param?: table | string): table | nil
-function acandy_mt.__index(_t, k)
+function acandy_mt:__index(k)
 	if not utils.is_valid_xml_name(k) then
 		error('Invalid tag name: '..k, 2)
 	end
@@ -453,10 +455,11 @@ function acandy_mt.__index(_t, k)
 	end
 
 	if not basic_elems_cache[k] then
-		basic_elems_cache[k] = new_basic_elem(k)
+		basic_elems_cache[k] = BasicElement(k)
 	end
 	return basic_elems_cache[k]
 end
+
 
 local acandy = setmetatable({
 	Fragment = Fragment,

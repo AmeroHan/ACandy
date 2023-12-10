@@ -6,6 +6,29 @@ local s_gsub = string.gsub
 local s_match = string.match
 
 
+--- Shallow copy a table.
+---@param t table
+---@return table
+function utils.shallow_copy(t)
+	local out = {}
+	for k, v in pairs(t) do
+		out[k] = v
+	end
+	return out
+end
+
+--- Shallow copy a table's sequence part.
+---@param t table
+---@return table
+function utils.shallow_icopy(t)
+	local out = {}
+	for i, v in ipairs(t) do
+		out[i] = v
+	end
+	return out
+end
+
+
 local remove_empty_prefix = {
 	[true] = true,
 	['^'] = true,
