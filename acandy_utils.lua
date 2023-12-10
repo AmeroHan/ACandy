@@ -81,11 +81,12 @@ function utils.is_valid_xml_name(name)
 end
 
 
+---@param str string
 ---@return table
 function utils.parse_shorthand_attrs(str)
 	-- parse id
 	local id = nil
-	str = string.gsub(str, '#([^%s#]*)', function(s)
+	str = s_gsub(str, '#([^%s#]*)', function(s)
 		if s == '' then
 			error('Empty id', 4)
 		end
@@ -97,8 +98,8 @@ function utils.parse_shorthand_attrs(str)
 	end)
 
 	-- parse class
-	local class = s_gsub(str, '%s+', ' ')
-	if class == '' or class == ' ' then
+	local class = s_gsub(str, '%s+', ' '):gsub('^%s*(.-)%s*$', '%1')
+	if class == '' then
 		class = nil
 	end
 
