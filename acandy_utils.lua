@@ -34,7 +34,7 @@ function utils.split(str, sep, remove_empty)
 
 	while start do
 		local sub = s_sub(str, last, start - 1)
-		if not (sub == '' and remove_empty) then
+		if not (sub == '' and remove_empty == true) then
 			out[#out + 1] = sub
 		end
 		last = stop + 1
