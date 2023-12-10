@@ -14,7 +14,6 @@ Copyright (c) 2023 AmeroHan
 local type = type
 local pairs = pairs
 local format = string.format
-local insert = table.insert
 local ipairs = ipairs
 local rawget = rawget
 local rawset = rawset
@@ -55,10 +54,10 @@ local function concat_fragment(frag)
 			append_serialized(node())
 		elseif node_type == 'string' then
 			-- string
-			insert(children, utils.html_encode(node))
+			children[#children + 1] = utils.html_encode(node)
 		else
 			-- Others: Element, boolean, number
-			insert(children, tostring(node))
+			children[#children + 1] = tostring(node)
 		end
 	end
 
@@ -207,12 +206,9 @@ local function elem_to_string(elem)
 		if v == true then
 			-- Boolean attributes
 			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
-			insert(attrs, ' '..k)
+			attrs[#attrs + 1] = ' '..k
 		elseif v then  -- Exclude the case `v == false`.
-			insert(
-				attrs,
-				format(' %s="%s"', k, utils.html_encode(tostring(v)))
-			)
+			attrs[#attrs + 1] = format(' %s="%s"', k, utils.html_encode(tostring(v)))
 		end
 	end
 	attrs = table.concat(attrs)
@@ -392,7 +388,7 @@ BuiltElement_mt = {
 local function new_frag_from_yields(_self, func)
 	local result = {}
 	local function yield(v)
-		insert(result, v)
+		result[#result + 1] = v
 	end
 	func(yield)
 	return setmetatable(result, Fragment_mt)
