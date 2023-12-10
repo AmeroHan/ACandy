@@ -1,19 +1,49 @@
 local utils = {}
 
-local t_insert = table.insert
+local s_sub = string.sub
+local s_find = string.find
 local s_gsub = string.gsub
 local s_match = string.match
 
 
+local remove_empty_prefix = {
+	[true] = true,
+	['^'] = true,
+	['^$'] = true,
+}
+local remove_empty_suffix = {
+	[true] = true,
+	['$'] = true,
+	['^$'] = true,
+}
+
 --- Split string by separator.
---- @param str string
---- @param sep string
-function utils.split(str, sep)
-	local list = {}
-	for substr in string.gmatch(str, sep) do
-		t_insert(list, substr)
+---@param str string
+---@param sep string 可以是任意长度的pattern
+---@param remove_empty? boolean | '^' | '$' | '^$'
+function utils.split(str, sep, remove_empty)
+	local out = {}
+	local last = 1
+	local start, stop = s_find(str, sep, last)
+
+	if start == 1 and remove_empty_prefix[remove_empty] then
+		last = stop + 1
+		start, stop = s_find(str, sep, start <= stop and last or (last + 1))
 	end
-	return list
+
+	while start do
+		if remove_empty ~= true then
+			out[#out + 1] = s_sub(str, last, start - 1)
+		end
+		last = stop + 1
+		-- when start > stop (stop == start - 1), empty string is matched
+		start, stop = s_find(str, sep, start <= stop and last or (last + 1))
+	end
+
+	if last <= #str or not remove_empty_suffix[remove_empty] then
+		out[#out + 1] = s_sub(str, last)
+	end
+	return out
 end
 
 
