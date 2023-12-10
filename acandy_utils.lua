@@ -18,8 +18,8 @@ local remove_empty_suffix = {
 }
 
 --- Split string by separator.
----@param str string
----@param sep string 可以是任意长度的pattern
+---@param str string string to split
+---@param sep string seperator, a pattern
 ---@param remove_empty? boolean | '^' | '$' | '^$'
 function utils.split(str, sep, remove_empty)
 	local out = {}
@@ -27,13 +27,15 @@ function utils.split(str, sep, remove_empty)
 	local start, stop = s_find(str, sep, last)
 
 	if start == 1 and remove_empty_prefix[remove_empty] then
+		-- skip empty string at the beginning
 		last = stop + 1
 		start, stop = s_find(str, sep, start <= stop and last or (last + 1))
 	end
 
 	while start do
-		if remove_empty ~= true then
-			out[#out + 1] = s_sub(str, last, start - 1)
+		local sub = s_sub(str, last, start - 1)
+		if not (sub == '' and remove_empty) then
+			out[#out + 1] = sub
 		end
 		last = stop + 1
 		-- when start > stop (stop == start - 1), empty string is matched
@@ -98,7 +100,7 @@ function utils.parse_shorthand_attrs(str)
 	end)
 
 	-- parse class
-	local class = s_gsub(str, '%s+', ' '):gsub('^%s*(.-)%s*$', '%1')
+	local class = s_gsub(str, '%s+', ' '):gsub('^%s*(.-)%s*$', '%1')  ---@type string | nil
 	if class == '' then
 		class = nil
 	end
