@@ -1,7 +1,5 @@
 local a = require("acandy")
 
--- print(a.div{class="container", id="container", a.p{"Hello, world!"}})
--- print(a.div())
 
 -----------------
 --  EXAMPLE 1  --
@@ -17,15 +15,13 @@ local example1 = (
 			a.p {
 				"There is ", a.strong "an example of strong", ".",
 				a.br,  -- Putting a constructer without calling is allowed.
-				"This is the second line."
+				"This is the second line.",
 			},
 			a.ul {
 				-- Function is also allowed, which may return an element,
 				-- an array, a string, etc.
 				function ()
-					local names = {
-						"Alice", "Bob", "Charlie"
-					}
+					local names = { "Alice", "Bob", "Charlie" }
 					local out = {}
 					for _, name in ipairs(names) do
 						table.insert(out, a.li(name))
@@ -134,7 +130,7 @@ local example4 = a.table {
 				a.td(item.weight..' kg'),
 			})
 		end
-	end,
+	end,  -- or `a.from_yields(function(yield) ... end)`
 }
 print(example4)
 --[[ Output (formated):

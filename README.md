@@ -19,13 +19,11 @@ local example1 = a.Fragment {
       a.p {
          "There is ", a.strong("an example of strong"), ".",
          a.br,
-         "This is the second line."
+         "This is the second line.",
       },
       a.ul {
          function ()
-            local names = {
-               "Alice", "Bob", "Charlie"
-            }
+            local names = { "Alice", "Bob", "Charlie" }
             local out = {}
             for _, name in ipairs(names) do
                table.insert(out, a.li(name))
