@@ -13,7 +13,7 @@ local example1 = (
 		a.h2 "Hello!",
 		-- Table is accepted as argument.
 		-- Map part represents attributes, array part represents children.
-		a.div { class = "container", id = "container",
+		a.div { class="container", id="container",
 			a.p {
 				"There is ", a.strong "an example of strong", ".",
 				a.br,  -- Putting a constructer without calling is allowed.
@@ -60,14 +60,14 @@ print(example1)
 -----------------
 
 local Card = function(param)
-	return a.div { class = "card",
+	return a.div { class="card",
 		a.h2 { param.name },
-		a.img { width = 100, src = param.avater },
+		a.img { width=100, src=param.avater },
 		a.Fragment(param),
 	}
 end
 
-local example2 = Card { avater = "https://example.com/", name = "amero",
+local example2 = Card { avater="https://example.com/", name="amero",
 	a.p "Custom component example.",
 	a.p "Use Fragment to receive children from param.",
 }

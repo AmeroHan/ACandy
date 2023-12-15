@@ -123,18 +123,18 @@ Properties can be read/assigned by indexing/assigning the element, like
 `elem.tag_name = 'p'`, `elem[1]` or `elem.class`.
 ]]
 
----@class BasicElement
+---@class BareElement
 --[[
-### BasicElement
+### BareElement
 
-A BasicElement is an Element without any properties except tag name, e.g.
+A BareElement is an Element without any properties except tag name, e.g.
 `acandy.div`. It is unmutable and can be cached and reused.
 
-Indexing a BasicElement would return a BuildingElement, and calling it would
+Indexing a BareElement would return a BuildingElement, and calling it would
 return a BuiltElement. Both methods would not change the element itself.
 
 ```lua
-local basic_div = acandy.div
+local bare_div = acandy.div
 ```
 ]]
 
@@ -144,17 +144,17 @@ local basic_div = acandy.div
 
 A BuildingElement is an Element derived from attribute shorthand syntex. The
 shorthand is a string of id and space-separated class names, and the syntex is
-to index the BasicElement with a shorthand string, i.e. to put it inside the
+to index the BareElement with a shorthand string, i.e. to put it inside the
 brackets followed after the tag name, e.g. `acandy.div['#id cls1 cls2']`.
 
 ```lua
 local building_div = acandy.div['#id cls1 cls2']
 ```
 
-Similar to BasicElements, a BuildingElement can be called to get a
+Similar to BareElements, a BuildingElement can be called to get a
 BuiltElement with properties set.
 
-Setting properties of a BasicElement would result in the element being
+Setting properties of a BareElement would result in the element being
 converted to BuiltElement.
 
 ```lua
@@ -164,11 +164,13 @@ my_div.id = "new-id"
 ```
 ]]
 
+---@class ElementLinkedList
+
 ---@class BuiltElement
 --[[
 ### BuiltElement
 
-A BuiltElement is an Element derived from a BasicElement or a BuildingElement by
+A BuiltElement is an Element derived from a BareElement or a BuildingElement by
 calling it, which would return the BuiltElement with properties set.
 
 ```lua
@@ -184,14 +186,15 @@ Although named "Built", it is still mutable. Its properties can be changed by
 assigning.
 ]]
 
-local BasicElement_mt  ---@type metatable
+local BareElement_mt  ---@type metatable
 local BuildingElement_mt  ---@type metatable
+local ElementLinkedList_mt  ---@type metatable
 local BuiltElement_mt  ---@type metatable
 
 
 ---@param tag_name string
----@return BasicElement
-local function BasicElement(tag_name)
+---@return BareElement
+local function BareElement(tag_name)
 	local str
 	if VOID_ELEMS[tag_name] then
 		str = format('<%s>', tag_name)
@@ -202,23 +205,18 @@ local function BasicElement(tag_name)
 		[SYM_TAG_NAME] = tag_name,  ---@type string
 		[SYM_STRING] = str,  ---@type string
 	}
-	return setmetatable(elem, BasicElement_mt)
+	return setmetatable(elem, BareElement_mt)
 end
 
 
 ---@param tag_name string
 ---@param attrs {[string]: string | number | boolean}
----@param child? BuildingElement
----@param leaf? BuildingElement
 ---@return BuildingElement
-local function BuildingElement(tag_name, attrs, child, leaf)
-	assert(not (child and VOID_ELEMS[tag_name]))
-	assert(not leaf or child)
+local function BuildingElement(tag_name, attrs)
 	local elem = {
 		[SYM_TAG_NAME] = tag_name,
 		[SYM_ATTRS] = attrs or {},
-		[SYM_CHILDREN] = not VOID_ELEMS[tag_name] and {child} or nil,
-		[SYM_LEAF] = leaf,
+		[SYM_CHILDREN] = not VOID_ELEMS[tag_name] and {} or nil,
 	}
 	return setmetatable(elem, BuildingElement_mt)
 end
@@ -235,9 +233,9 @@ local function BuiltElement(tag_name, attrs, children)
 end
 
 
----@param self BasicElement
+---@param self BareElement
 ---@return string
-local function basic_elem_to_string(self)
+local function bare_elem_to_string(self)
 	return self[SYM_STRING]
 end
 
@@ -300,7 +298,7 @@ local function get_elem_prop(self, key)
 end
 
 
----@param self BasicElement | BuildingElement
+---@param self BareElement | BuildingElement
 ---@param props any
 ---@return BuiltElement
 local function new_built_elem_by_props(self, props)
@@ -400,7 +398,7 @@ end
 
 --- Sementic sugar for setting attributes.
 --- e.g. `local elem = acandy.div['#id cls1 cls2']`
----@param self BasicElement
+---@param self BareElement
 ---@param shorthand_attrs string | table
 ---@return BuildingElement
 local function new_building_elem_by_shorthand_attrs(self, shorthand_attrs)
@@ -416,18 +414,18 @@ local function new_building_elem_by_shorthand_attrs(self, shorthand_attrs)
 end
 
 
-BasicElement_mt = {
-	__tostring = basic_elem_to_string,
+BareElement_mt = {
+	__tostring = bare_elem_to_string,
 	__index = new_building_elem_by_shorthand_attrs,  --> BuildingElement
 	__call = new_built_elem_by_props,  --> BuiltElement
 	__newindex = function()
-		error('Assigning properties is not allowed on basic element')
+		error('Assigning properties is not allowed on bare elements')
 	end,
 }
 BuildingElement_mt = {
 	__tostring = elem_to_string,
 	__index = get_elem_prop,
-	__newindex = set_building_elem_prop,  -- metatable: BasicElement_mt -> BuiltElement_mt
+	__newindex = set_building_elem_prop,  -- metatable: BareElement_mt -> BuiltElement_mt
 	__call = new_built_elem_by_props,  --> BuiltElement
 }
 BuiltElement_mt = {
@@ -466,7 +464,8 @@ end
 ---    end
 --- end)  --> {1, 2, 3, 4, 5}
 --- ```
---- or
+--- or with syntex sugar to avoid calling `from_yields`, which may increase
+--- indentation level in some coding styles.
 --- ```
 --- acandy.from_yields ^ function(yield)
 ---    for i = 1, 5 do
@@ -474,6 +473,8 @@ end
 ---    end
 --- end  --> {1, 2, 3, 4, 5}
 --- ```
+--- The reason why `^` is used is that `^` has a higher priority than `/`, which
+--- is used to create elements.
 local from_yields = setmetatable({}, {
 	__call = new_frag_from_yields,
 	__pow = new_frag_from_yields,
@@ -482,7 +483,7 @@ local from_yields = setmetatable({}, {
 
 --- Metatable used by this module.
 local acandy_mt = {}  ---@type metatable
-local basic_elems_cache = {}  ---@type {[string]: BasicElement}
+local bare_elems_cache = {}  ---@type {[string]: BareElement}
 
 
 --- When indexing a tag name, returns a constructor of that element.
@@ -498,10 +499,10 @@ function acandy_mt:__index(k)
 		k = lower_k
 	end
 
-	if not basic_elems_cache[k] then
-		basic_elems_cache[k] = BasicElement(k)
+	if not bare_elems_cache[k] then
+		bare_elems_cache[k] = BareElement(k)
 	end
-	return basic_elems_cache[k]
+	return bare_elems_cache[k]
 end
 
 

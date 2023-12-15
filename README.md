@@ -1,10 +1,10 @@
 # ACandy - A sugary Lua module for building HTML
 
-ACandy takes advantage of Lua’s syntactic sugar and metatable, giving a intuitive way to build complex HTML from Lua.
+ACandy takes advantage of Lua’s syntactic sugar and metatable, giving an intuitive way to build complex HTML from Lua.
 
 ACandy 利用 Lua 的语法糖和元表，提供了一个易用的方式来从 Lua 构建 HTML。
 
-## Glimpse / 瞄一瞄
+## Take a peek / 瞄一瞄
 
 Check [example.lua](./example.lua) for more details about features, usages, etc.
 
@@ -15,20 +15,20 @@ local a = require "acandy"
 
 local example1 = a.Fragment {
    a.h2 "Hello!",
-   a.div { class = "container", id = "container",
+   a.div { class="container", id="container",
       a.p {
-         "There is ", a.strong "an example of strong", ".",
+         "There is ", a.strong("an example of strong"), ".",
          a.br,
          "This is the second line."
       },
-      A.ul {
+      a.ul {
          function ()
             local names = {
                "Alice", "Bob", "Charlie"
             }
             local out = {}
             for _, name in ipairs(names) do
-               table.insert(out, A.li(name))
+               table.insert(out, a.li(name))
             end
             return out
          end,
@@ -39,7 +39,7 @@ local example1 = a.Fragment {
 print(example1)
 ```
 
-Output (formated): / 输出（经过格式化）：
+Output (formatted): / 输出（经过格式化）：
 
 ```html
 <h2>Hello!</h2>
