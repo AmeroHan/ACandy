@@ -23,11 +23,11 @@ local setmetatable = setmetatable
 
 local VOID_ELEMS, HTML_ELEMS
 do
-	local element_config = require('acandy_elem_config')
+	local element_config = require('acandy.elem_config')
 	VOID_ELEMS = element_config.VOID_ELEMS
 	HTML_ELEMS = element_config.HTML_ELEMS
 end
-local utils = require('acandy_utils')
+local utils = require('acandy.utils')
 
 
 ---@class Symbol
