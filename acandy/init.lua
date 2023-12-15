@@ -14,7 +14,6 @@ Copyright (c) 2023 AmeroHan
 local type = type
 local pairs = pairs
 local concat = table.concat
-local format = string.format
 local ipairs = ipairs
 local rawget = rawget
 local rawset = rawset
@@ -197,9 +196,9 @@ local BuiltElement_mt  ---@type metatable
 local function BareElement(tag_name)
 	local str
 	if VOID_ELEMS[tag_name] then
-		str = format('<%s>', tag_name)
+		str = '<'..tag_name..'>'
 	else
-		str = format('<%s></%s>', tag_name, tag_name)
+		str = '<'..tag_name..'></'..tag_name..'>'
 	end
 	local elem = {
 		[SYM_TAG_NAME] = tag_name,  ---@type string
@@ -448,8 +447,10 @@ BuiltElement_mt = {
 ---@return Fragment
 local function new_frag_from_yields(self, func)
 	local result = {}
+	local n = 0
 	local function yield(v)
-		result[#result + 1] = v
+		n = n + 1
+		result[n] = v
 	end
 	func(yield)
 	return setmetatable(result, Fragment_mt)
