@@ -1,5 +1,7 @@
 local utils = {}
 
+local pairs = pairs
+local ipairs = ipairs
 local s_sub = string.sub
 local s_find = string.find
 local s_gsub = string.gsub
@@ -29,19 +31,19 @@ function utils.shallow_icopy(t)
 end
 
 
-local remove_empty_prefix = {
+local REMOVE_EMPTY_PREFIXS = {
 	[true] = true,
 	['^'] = true,
 	['^$'] = true,
 }
-local remove_empty_suffix = {
+local REMOVE_EMPTY_SUFFIXS = {
 	[true] = true,
 	['$'] = true,
 	['^$'] = true,
 }
 
 --- Split string by separator.
----@param str string string to split
+---@param str string | number string to split
 ---@param sep string seperator, a pattern
 ---@param remove_empty? boolean | '^' | '$' | '^$'
 function utils.split(str, sep, remove_empty)
@@ -49,7 +51,7 @@ function utils.split(str, sep, remove_empty)
 	local last = 1
 	local start, stop = s_find(str, sep, last)
 
-	if start == 1 and remove_empty_prefix[remove_empty] then
+	if start == 1 and REMOVE_EMPTY_PREFIXS[remove_empty] then
 		-- skip empty string at the beginning
 		last = stop + 1
 		start, stop = s_find(str, sep, start <= stop and last or (last + 1))
@@ -65,7 +67,7 @@ function utils.split(str, sep, remove_empty)
 		start, stop = s_find(str, sep, start <= stop and last or (last + 1))
 	end
 
-	if last <= #str or not remove_empty_suffix[remove_empty] then
+	if last <= #str or not REMOVE_EMPTY_SUFFIXS[remove_empty] then
 		out[#out + 1] = s_sub(str, last)
 	end
 	return out
@@ -80,7 +82,7 @@ local ENTITY_ENCODE_MAP = {
 }
 
 --- Replace `<`, `>`, `&` and `"` with entities.
----@param str string
+---@param str string | number
 ---@return string
 function utils.attr_encode(str)
 	return (s_gsub(str, '[<>&"]', ENTITY_ENCODE_MAP))
@@ -88,7 +90,7 @@ end
 
 
 --- Replace `<`, `>`, `&` with entities.
----@param str string
+---@param str string | number
 ---@return string
 function utils.html_encode(str)
 	return (s_gsub(str, '[<>&]', ENTITY_ENCODE_MAP))
@@ -106,7 +108,7 @@ function utils.is_valid_xml_name(name)
 end
 
 
----@param str string
+---@param str string | number
 ---@return table
 function utils.parse_shorthand_attrs(str)
 	-- parse id
@@ -123,14 +125,11 @@ function utils.parse_shorthand_attrs(str)
 	end)
 
 	-- parse class
-	local class = s_gsub(str, '%s+', ' '):gsub('^%s*(.-)%s*$', '%1')  ---@type string | nil
-	if class == '' then
-		class = nil
-	end
+	local class = str:gsub('^%s*(.-)%s*$', '%1'):gsub('%s+', ' ')
 
 	return {
 		id = id,
-		class = class,
+		class = class ~= '' and class or nil,
 	}
 end
 
