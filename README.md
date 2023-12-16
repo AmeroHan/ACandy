@@ -6,9 +6,9 @@ ACandy 利用 Lua 的语法糖和元表，提供了一个易用的方式来从 L
 
 ## Take a peek / 瞄一瞄
 
-Check [example.lua](./example.lua) for more details about features, usages, etc.
+Check [examples.lua](./examples.lua) for more details about features, usages, etc.
 
-于 [example.lua](./example.lua) 查阅更多特性、用法。
+于 [examples.lua](./examples.lua) 查阅更多特性、用法。
 
 ```lua
 local a = require "acandy"
