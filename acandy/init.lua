@@ -13,6 +13,7 @@ Copyright (c) 2023 AmeroHan
 
 local type = type
 local pairs = pairs
+local assert = assert
 local concat = table.concat
 local ipairs = ipairs
 local rawget = rawget
@@ -20,13 +21,11 @@ local rawset = rawset
 local tostring = tostring
 local setmetatable = setmetatable
 
-local VOID_ELEMS, HTML_ELEMS
-do
-	local element_config = require('acandy.elem_config')
-	VOID_ELEMS = element_config.VOID_ELEMS
-	HTML_ELEMS = element_config.HTML_ELEMS
-end
 local utils = require('acandy.utils')
+local VOID_ELEMS, HTML_ELEMS = (function()
+	local config = require('acandy.elem_config')
+	return config.VOID_ELEMS, config.HTML_ELEMS
+end)()
 
 
 ---@class Symbol
@@ -47,10 +46,14 @@ A Fragment is an array-like table with metatable `Fragment_mt`.
 ---@class Fragment: table
 
 --- Append the serialized string of the Fragment to `strs`.
+--- Use len to avoid calling `#strs` repeatedly. This improves performance by
+--- ~1/3.
 ---@param strs table
 ---@param frag table
-local function extend_strings_with_fragment(strs, frag)
+---@param strs_len? integer # of `strs`, used to optimize performance.
+local function extend_strings_with_fragment(strs, frag, strs_len)
 	if #frag == 0 then return end
+	strs_len = strs_len or #strs
 
 	local function append_serialized(node)
 		local node_type = type(node)
@@ -62,9 +65,11 @@ local function extend_strings_with_fragment(strs, frag)
 		elseif node_type == 'function' then
 			append_serialized(node())
 		elseif node_type == 'string' then
-			strs[#strs + 1] = utils.html_encode(node)
+			strs_len = strs_len + 1
+			strs[strs_len] = utils.html_encode(node)
 		else  -- others: Element, boolean, number
-			strs[#strs + 1] = tostring(node)
+			strs_len = strs_len + 1
+			strs[strs_len] = tostring(node)
 		end
 	end
 
@@ -79,7 +84,7 @@ local function concat_fragment(frag)
 	if #frag == 0 then return '' end
 
 	local children = {}
-	extend_strings_with_fragment(children, frag)
+	extend_strings_with_fragment(children, frag, 0)
 	return concat(children)
 end
 
@@ -214,19 +219,24 @@ end
 local function BuildingElement(tag_name, attrs)
 	local elem = {
 		[SYM_TAG_NAME] = tag_name,
-		[SYM_ATTRS] = attrs or {},
+		[SYM_ATTRS] = attrs,
 		[SYM_CHILDREN] = not VOID_ELEMS[tag_name] and {} or nil,
 	}
 	return setmetatable(elem, BuildingElement_mt)
 end
 
 
+---@param tag_name string
+---@param attrs {[string]: string | number | boolean}
+---@param children? any[]
 ---@return BuiltElement
 local function BuiltElement(tag_name, attrs, children)
+	assert(not (VOID_ELEMS[tag_name] and children), 'void elements cannot have children')
+	assert(VOID_ELEMS[tag_name] or type(children) == 'table', 'non-void elements must have children')
 	local elem = {
-		[SYM_TAG_NAME] = tag_name,  ---@type string
-		[SYM_ATTRS] = attrs,  ---@type table
-		[SYM_CHILDREN] = children,  ---@type table | nil
+		[SYM_TAG_NAME] = tag_name,
+		[SYM_ATTRS] = attrs,
+		[SYM_CHILDREN] = children,
 	}
 	return setmetatable(elem, BuiltElement_mt)
 end
@@ -244,23 +254,23 @@ end
 ---@return string
 local function elem_to_string(self)
 	local tag_name = self[SYM_TAG_NAME]
-	local result = {'<', tag_name}
 
-	-- format attributes
+	-- format open tag
+	local result = {'<', tag_name}
 	for k, v in pairs(self[SYM_ATTRS]) do
 		if v then  -- exclude the case `v == false`
-			result[#result + 1] = ' '
-			result[#result + 1] = k
+			result[#result+1] = ' '
+			result[#result+1] = k
 			-- exclude boolean attributes
 			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
 			if v ~= true then
-				result[#result + 1] = '="'
-				result[#result + 1] = utils.attr_encode(tostring(v))
-				result[#result + 1] = '"'
+				result[#result+1] = '="'
+				result[#result+1] = utils.attr_encode(tostring(v))
+				result[#result+1] = '"'
 			end
 		end
 	end
-	result[#result + 1] = '>'
+	result[#result+1] = '>'
 
 	-- retrun without children or close tag when being a void element
 	-- void element: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
@@ -269,10 +279,11 @@ local function elem_to_string(self)
 	end
 
 	-- format children
-	extend_strings_with_fragment(result, rawget(self, SYM_CHILDREN))
-	result[#result + 1] = '</'
-	result[#result + 1] = tag_name
-	result[#result + 1] = '>'
+	extend_strings_with_fragment(result, self[SYM_CHILDREN])
+	-- format close tag
+	result[#result+1] = '</'
+	result[#result+1] = tag_name
+	result[#result+1] = '>'
 
 	return concat(result)
 end
@@ -311,7 +322,7 @@ local function new_built_elem_by_props(self, props)
 			for k, v in pairs(props) do
 				if type(k) == 'string' then
 					if not utils.is_valid_xml_name(k) then
-						error('Invalid attribute name: '..k, 2)
+						error('invalid attribute name: '..k, 2)
 					end
 					new_attrs[k] = v;
 				end
@@ -327,7 +338,7 @@ local function new_built_elem_by_props(self, props)
 				new_children[k] = v;
 			elseif type(k) == 'string' then
 				if not utils.is_valid_xml_name(k) then
-					error('Invalid attribute name: '..k, 2)
+					error('invalid attribute name: '..k, 2)
 				end
 				new_attrs[k] = v;
 			end
@@ -348,7 +359,7 @@ local function set_elem_prop(self, key, val)
 	if key == 'tag_name' or key == 'tagname' then
 		-- e.g. elem.tag_name = 'div'
 		if not utils.is_valid_xml_name(val) then
-			error('Invalid tag name: '..val, 2)
+			error('invalid tag name: '..val, 2)
 		end
 
 		local lower = val:lower()
@@ -370,7 +381,7 @@ local function set_elem_prop(self, key, val)
 	elseif type(key) == 'string' then
 		-- e.g. elem.class = 'content'
 		if not utils.is_valid_xml_name(key) then
-			error('Invalid attribute name: '..key, 2)
+			error('invalid attribute name: '..key, 2)
 		end
 		self[SYM_ATTRS][key] = val
 	elseif type(key) == 'number' then
@@ -407,7 +418,7 @@ local function new_building_elem_by_shorthand_attrs(self, shorthand_attrs)
 	elseif type(shorthand_attrs) == 'table' then
 		attrs = shorthand_attrs
 	else
-		error('Invalid attributes: '..tostring(shorthand_attrs), 2)
+		error('invalid attributes: '..tostring(shorthand_attrs), 2)
 	end
 	return BuildingElement(self[SYM_TAG_NAME], attrs)
 end
@@ -418,7 +429,7 @@ BareElement_mt = {
 	__index = new_building_elem_by_shorthand_attrs,  --> BuildingElement
 	__call = new_built_elem_by_props,  --> BuiltElement
 	__newindex = function()
-		error('Assigning properties is not allowed on bare elements')
+		error('trying to assign properties on bare elements')
 	end,
 }
 BuildingElement_mt = {
@@ -492,7 +503,7 @@ local bare_elems_cache = {}  ---@type {[string]: BareElement}
 ---@return fun(param?: table | string): table | nil
 function acandy_mt:__index(k)
 	if not utils.is_valid_xml_name(k) then
-		error('Invalid tag name: '..k, 2)
+		error('invalid tag name: '..k, 2)
 	end
 
 	local lower_k = k:lower()

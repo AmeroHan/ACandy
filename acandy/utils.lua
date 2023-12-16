@@ -113,10 +113,10 @@ function utils.parse_shorthand_attrs(str)
 	local id = nil
 	str = s_gsub(str, '#([^%s#]*)', function(s)
 		if s == '' then
-			error('Empty id', 4)
+			error('empty id', 4)
 		end
 		if id then
-			error('Duplicate id: '..s, 4)
+			error('puplicate id: '..s, 4)
 		end
 		id = s
 		return ''
