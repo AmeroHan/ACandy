@@ -21,7 +21,7 @@ local example1 = (
 				-- Function is also allowed, which may return an element,
 				-- an array, a string, etc.
 				function ()
-					local names = { "Alice", "Bob", "Charlie" }
+					local names = { "Alice", "Bob", "Carol" }
 					local out = {}
 					for _, name in ipairs(names) do
 						table.insert(out, a.li(name))
@@ -45,7 +45,7 @@ print(example1)
 	<ul>
 		<li>Alice</li>
 		<li>Bob</li>
-		<li>Charlie</li>
+		<li>Carol</li>
 	</ul>
 </div>
 ]]
@@ -55,17 +55,17 @@ print(example1)
 --  EXAMPLE 2  --
 -----------------
 
-local Card = function(param)
+local Card = function(props)
 	return a.div { class="card",
-		a.h2 { param.name },
-		a.img { width=100, src=param.avater },
-		a.Fragment(param),
+		a.h2 { props.name },
+		a.img { width=100, src=props.avater },
+		a.Fragment(props),
 	}
 end
 
 local example2 = Card { avater="https://example.com/", name="amero",
 	a.p "Custom component example.",
-	a.p "Use Fragment to receive children from param.",
+	a.p "Use Fragment to receive children from props.",
 }
 
 print(example2)
@@ -74,7 +74,7 @@ print(example2)
 	<h2>amero</h2>
 	<img width="100" src="https://example.com/">
 	<p>Custom component example.</p>
-	<p>Use Fragment to receive children from param.</p>
+	<p>Use Fragment to receive children from props.</p>
 </div>
 ]]
 
@@ -113,9 +113,9 @@ print(example3)
 -----------------
 
 local height_weights = {
-	{ name = 'Alice'  , height = 160, weight = 50 },
-	{ name = 'Bob'    , height = 180, weight = 70 },
-	{ name = 'Charlie', height = 170, weight = 60 },
+	{ name = "Alice", height = 160, weight = 50 },
+	{ name = "Bob"  , height = 180, weight = 70 },
+	{ name = "Carol", height = 170, weight = 60 },
 }
 
 local example4 = a.table {
@@ -151,7 +151,7 @@ print(example4)
 		<td>70 kg</td>
 	</tr>
 	<tr>
-		<td>Charlie</td>
+		<td>Carol</td>
 		<td>170 cm</td>
 		<td>60 kg</td>
 	</tr>
@@ -163,8 +163,31 @@ print(example4)
 --  EXAMPLE 5  --
 -----------------
 
-local example5 = a.div['#my-div cls1 cls2'] {
+local example5 = a.div["#my-div cls1 cls2"] {
 	a.p "You know what it is.",
 }
 print(example5)
 --> <div id="my-div" class="cls1 cls2"><p>You know what it is.</p></div>
+
+
+-----------------
+--  EXAMPLE 6  --
+-----------------
+
+local example6 = a.header["site-header"] / a.nav / a.ul {
+	a.li / a.a { href="/home", "Home" },
+	a.li / a.a { href="/posts", "Posts" },
+	a.li / a.a { href="/about", "About" },
+}
+print(example6)
+--[[ Output (formated):
+<header class="site-header">
+	<nav>
+		<ul>
+			<li><a href="/home">Home</a></li>
+			<li><a href="/posts">Posts</a></li>
+			<li><a href="/about">About</a></li>
+		</ul>
+	</nav>
+</header>
+]]

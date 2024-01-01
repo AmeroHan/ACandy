@@ -30,8 +30,7 @@ end)()
 
 ---@class Symbol
 
-local SYM_LEAF = {} ---@type Symbol
-local SYM_ATTRS = {} ---@type Symbol
+local SYM_ATTR_MAP = {} ---@type Symbol
 local SYM_STRING = {} ---@type Symbol
 local SYM_CHILDREN = {} ---@type Symbol
 local SYM_TAG_NAME = {} ---@type Symbol
@@ -168,7 +167,7 @@ my_div.id = "new-id"
 ```
 ]]
 
----@class ElementLinkedList
+---@class ElementChain
 
 ---@class BuiltElement
 --[[
@@ -190,10 +189,37 @@ Although named "Built", it is still mutable. Its properties can be changed by
 assigning.
 ]]
 
+
+---@param strs string[]
+---@param attr_map {[string]: string | number | boolean}
+---@param strs_len integer?
+---@return integer
+local function extend_strings_with_attrs(strs, attr_map, strs_len)
+	strs_len = strs_len or #strs
+	for k, v in pairs(attr_map) do
+		if v == true then
+			-- boolean attributes
+			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
+			strs_len = strs_len + 2
+			strs[strs_len-1] = ' '
+			strs[strs_len] = k
+		elseif v then  -- exclude the case `v == false`
+			strs_len = strs_len + 5
+			strs[strs_len-4] = ' '
+			strs[strs_len-3] = k
+			strs[strs_len-2] = '="'
+			strs[strs_len-1] = utils.attr_encode(tostring(v))
+			strs[strs_len] = '"'
+		end
+	end
+	return strs_len
+end
+
+
 local BareElement_mt  ---@type metatable
-local BuildingElement_mt  ---@type metatable
-local ElementLinkedList_mt  ---@type metatable
 local BuiltElement_mt  ---@type metatable
+local BuildingElement_mt  ---@type metatable
+local ElementChain_mt  ---@type metatable
 
 
 ---@param tag_name string
@@ -214,12 +240,12 @@ end
 
 
 ---@param tag_name string
----@param attrs {[string]: string | number | boolean}
+---@param attr_map {[string]: string | number | boolean}
 ---@return BuildingElement
-local function BuildingElement(tag_name, attrs)
+local function BuildingElement(tag_name, attr_map)
 	local elem = {
 		[SYM_TAG_NAME] = tag_name,
-		[SYM_ATTRS] = attrs,
+		[SYM_ATTR_MAP] = attr_map,
 		[SYM_CHILDREN] = not VOID_ELEMS[tag_name] and {} or nil,
 	}
 	return setmetatable(elem, BuildingElement_mt)
@@ -227,18 +253,30 @@ end
 
 
 ---@param tag_name string
----@param attrs {[string]: string | number | boolean}
+---@param attr_map {[string]: string | number | boolean}
 ---@param children? any[]
 ---@return BuiltElement
-local function BuiltElement(tag_name, attrs, children)
+local function BuiltElement(tag_name, attr_map, children)
 	assert(not (VOID_ELEMS[tag_name] and children), 'void elements cannot have children')
 	assert(VOID_ELEMS[tag_name] or type(children) == 'table', 'non-void elements must have children')
 	local elem = {
 		[SYM_TAG_NAME] = tag_name,
-		[SYM_ATTRS] = attrs,
+		[SYM_ATTR_MAP] = attr_map,
 		[SYM_CHILDREN] = children,
 	}
 	return setmetatable(elem, BuiltElement_mt)
+end
+
+
+---@param tag_names string[]
+---@param attr_maps {[string]: string | number | boolean}[]
+---@return ElementChain
+local function ElementChain(tag_names, attr_maps)
+	local elem_chain = {
+		[SYM_TAG_NAME] = tag_names,
+		[SYM_ATTR_MAP] = attr_maps,
+	}
+	return setmetatable(elem_chain, ElementChain_mt)
 end
 
 
@@ -257,19 +295,7 @@ local function elem_to_string(self)
 
 	-- format open tag
 	local result = {'<', tag_name}
-	for k, v in pairs(self[SYM_ATTRS]) do
-		if v then  -- exclude the case `v == false`
-			result[#result+1] = ' '
-			result[#result+1] = k
-			-- exclude boolean attributes
-			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
-			if v ~= true then
-				result[#result+1] = '="'
-				result[#result+1] = utils.attr_encode(tostring(v))
-				result[#result+1] = '"'
-			end
-		end
-	end
+	extend_strings_with_attrs(result, self[SYM_ATTR_MAP])
 	result[#result+1] = '>'
 
 	-- retrun without children or close tag when being a void element
@@ -298,7 +324,7 @@ local function get_elem_prop(self, key)
 		return self[SYM_TAG_NAME]
 	elseif type(key) == 'string' then
 		-- e.g. `elem.class`
-		return self[SYM_ATTRS][key]
+		return self[SYM_ATTR_MAP][key]
 	elseif type(key) == 'number' then
 		-- e.g. `elem[1]`
 		return self[SYM_CHILDREN][key]
@@ -311,10 +337,10 @@ end
 ---@param self BareElement | BuildingElement
 ---@param props any
 ---@return BuiltElement
-local function new_built_elem_by_props(self, props)
+local function new_built_elem_from_props(self, props)
 	local tag_name = self[SYM_TAG_NAME]
-	local attrs = rawget(self, SYM_ATTRS) or {}
-	local new_attrs = utils.shallow_copy(attrs)
+	local attr_map = rawget(self, SYM_ATTR_MAP) or {}
+	local new_attr_map = utils.shallow_copy(attr_map)
 
 	if VOID_ELEMS[tag_name] then
 		-- void element, e.g. <br>, <img>
@@ -324,11 +350,11 @@ local function new_built_elem_by_props(self, props)
 					if not utils.is_valid_xml_name(k) then
 						error('invalid attribute name: '..k, 2)
 					end
-					new_attrs[k] = v;
+					new_attr_map[k] = v;
 				end
 			end
 		end
-		return BuiltElement(tag_name, new_attrs)
+		return BuiltElement(tag_name, new_attr_map)
 	end
 
 	local new_children = {}
@@ -340,14 +366,14 @@ local function new_built_elem_by_props(self, props)
 				if not utils.is_valid_xml_name(k) then
 					error('invalid attribute name: '..k, 2)
 				end
-				new_attrs[k] = v;
+				new_attr_map[k] = v;
 			end
 		end
 	else
 		new_children[1] = props
 	end
 
-	return BuiltElement(tag_name, new_attrs, new_children)
+	return BuiltElement(tag_name, new_attr_map, new_children)
 end
 
 
@@ -383,7 +409,7 @@ local function set_elem_prop(self, key, val)
 		if not utils.is_valid_xml_name(key) then
 			error('invalid attribute name: '..key, 2)
 		end
-		self[SYM_ATTRS][key] = val
+		self[SYM_ATTR_MAP][key] = val
 	elseif type(key) == 'number' then
 		-- e.g. elem[1] = P 'Lorem ipsum dolor sit amet...'
 		if nil == val then
@@ -397,51 +423,186 @@ local function set_elem_prop(self, key, val)
 end
 
 
----@param self BuildingElement
----@param key string | number
----@param val any
-local function set_building_elem_prop(self, key, val)
-	set_elem_prop(self, key, val)
-	setmetatable(self, BuiltElement_mt)
-end
-
-
 --- Sementic sugar for setting attributes.
 --- e.g. `local elem = acandy.div['#id cls1 cls2']`
 ---@param self BareElement
 ---@param shorthand_attrs string | table
 ---@return BuildingElement
 local function new_building_elem_by_shorthand_attrs(self, shorthand_attrs)
-	local attrs
+	local attr_map
 	if type(shorthand_attrs) == 'string' then
-		attrs = utils.parse_shorthand_attrs(shorthand_attrs)
+		attr_map = utils.parse_shorthand_attrs(shorthand_attrs)
 	elseif type(shorthand_attrs) == 'table' then
-		attrs = shorthand_attrs
+		attr_map = shorthand_attrs
 	else
 		error('invalid attributes: '..tostring(shorthand_attrs), 2)
 	end
-	return BuildingElement(self[SYM_TAG_NAME], attrs)
+	return BuildingElement(self[SYM_TAG_NAME], attr_map)
+end
+
+
+---@param self ElementChain
+---@return ElementChain
+local function copy_elem_chain(self)
+	local new_chain = {
+		[SYM_TAG_NAME] = utils.shallow_icopy(self[SYM_TAG_NAME]),
+		[SYM_ATTR_MAP] = utils.shallow_icopy(self[SYM_ATTR_MAP]),
+	}
+	return setmetatable(new_chain, ElementChain_mt)
+end
+
+
+---@param chain ElementChain
+---@param tag_name string
+---@param attr_map {[string]: string | number | boolean}?
+local function append_elem_to_elem_chain(chain, tag_name, attr_map)
+	local new_len = #chain[SYM_TAG_NAME] + 1
+	chain[SYM_TAG_NAME][new_len] = tag_name
+	chain[SYM_ATTR_MAP][new_len] = attr_map
+end
+
+
+---@param chain1 ElementChain
+---@param chain2 ElementChain
+---@return ElementChain
+local function connect_elem_chains(chain1, chain2)
+	local new_tag_names = {}
+	local new_attr_maps = {}
+	local attr_maps_to_copy_from = chain1[SYM_ATTR_MAP]
+	for i, tag_name in ipairs(chain1[SYM_TAG_NAME]) do
+		new_tag_names[i] = tag_name
+		new_attr_maps[i] = attr_maps_to_copy_from[i]
+	end
+	local len = #new_tag_names
+	attr_maps_to_copy_from = chain2[SYM_ATTR_MAP]
+	for i, tag_name in ipairs(chain2[SYM_TAG_NAME]) do
+		new_tag_names[len+i] = tag_name
+		new_attr_maps[len+i] = attr_maps_to_copy_from[i]
+	end
+	return ElementChain(new_tag_names, new_attr_maps)
+end
+
+
+---@param self ElementChain
+---@return string
+local function elem_chain_to_string(self)
+	local tag_names = self[SYM_TAG_NAME]
+	local attr_maps = self[SYM_ATTR_MAP]
+	local result = {}
+
+	for i, tag_name in ipairs(tag_names) do
+		result[#result+1] = '><'
+		result[#result+1] = tag_name
+		if attr_maps[i] then
+			extend_strings_with_attrs(result, attr_maps[i])
+		end
+	end
+	result[1] = '<'
+
+	for i = #tag_names, 1, -1 do
+		result[#result+1] = '></'
+		result[#result+1] = tag_names[i]
+	end
+	result[#result+1] = '>'
+
+	return concat(result)
+end
+
+
+---@param chain ElementChain
+---@return BuiltElement root_elem, BuiltElement leaf_elem
+local function elem_chain_to_built_elem(chain)
+	local tag_names = chain[SYM_TAG_NAME]
+	local attr_maps = chain[SYM_ATTR_MAP]
+	local leaf_elem
+	local function f(i)
+		if tag_names[i+1] then
+			return BuiltElement(tag_names[i], attr_maps[i] or {}, {f(i+1)})
+		end
+		leaf_elem = BuiltElement(tag_names[i], attr_maps[i] or {}, {})
+		return leaf_elem
+	end
+	return f(1), leaf_elem
+end
+
+
+---@param self ElementChain
+---@param other any
+---@return ElementChain | BuiltElement
+local function elem_chain_division(self, other)
+	local other_mt = getmetatable(other)
+
+	if other_mt == BareElement_mt or other_mt == BuildingElement_mt then
+		local other_tag_name = other[SYM_TAG_NAME]
+		local other_attr_map = rawget(other, SYM_ATTR_MAP)
+
+		if VOID_ELEMS[other_tag_name] then
+			local root_elem, leaf_elem = elem_chain_to_built_elem(self)
+			leaf_elem[SYM_CHILDREN][1] = BuiltElement(other_tag_name, other_attr_map or {})
+			return root_elem
+		end
+
+		local new_chain = copy_elem_chain(self)
+		append_elem_to_elem_chain(new_chain, other_tag_name, other_attr_map)
+		return new_chain
+	elseif other_mt == ElementChain_mt then
+		return connect_elem_chains(self, other)
+	elseif other_mt == BuiltElement_mt or other_mt == Fragment_mt then
+		local root_elem, leaf_elem = elem_chain_to_built_elem(self)
+		leaf_elem[SYM_CHILDREN][1] = other
+		return root_elem
+	end
+
+	error('improper usage', 2)
+end
+
+
+---@param self BareElement | BuildingElement
+---@param other any
+---@return ElementChain | BuiltElement
+local function elem_division(self, other)
+	local tag_name = self[SYM_TAG_NAME]
+	if VOID_ELEMS[tag_name] then
+		error('cannot perform division on a void element', 2)
+	end
+	return elem_chain_division(ElementChain({tag_name}, {rawget(self, SYM_ATTR_MAP)}), other)
+end
+
+
+local function error_wrong_index()
+	error("you can't access properties until it's been built (by calling it)", 2)
+end
+
+local function error_wrong_newindex()
+	error("you can't assign properties until it's been built (by calling it)", 2)
 end
 
 
 BareElement_mt = {
-	__tostring = bare_elem_to_string,
+	__tostring = bare_elem_to_string,  --> string
 	__index = new_building_elem_by_shorthand_attrs,  --> BuildingElement
-	__call = new_built_elem_by_props,  --> BuiltElement
-	__newindex = function()
-		error('trying to assign properties on bare elements')
-	end,
+	__call = new_built_elem_from_props,  --> BuiltElement
+	__div = elem_division,  --> ElementChain | BuiltElement
+	__newindex = error_wrong_newindex,
 }
 BuildingElement_mt = {
-	__tostring = elem_to_string,
-	__index = get_elem_prop,
-	__newindex = set_building_elem_prop,  -- metatable: BareElement_mt -> BuiltElement_mt
-	__call = new_built_elem_by_props,  --> BuiltElement
+	__tostring = elem_to_string,  --> string
+	__call = new_built_elem_from_props,  --> BuiltElement
+	__div = elem_division,  --> ElementChain | BuiltElement
+	__index = error_wrong_index,
+	__newindex = error_wrong_newindex,
 }
 BuiltElement_mt = {
-	__tostring = elem_to_string,
+	__tostring = elem_to_string,  --> string
 	__index = get_elem_prop,
 	__newindex = set_elem_prop,
+}
+ElementChain_mt = {
+	__tostring = elem_chain_to_string,  --> string
+	__call = function(self) return (elem_chain_to_built_elem(self)) end,  --> BuiltElement
+	__div = elem_chain_division,  --> ElementChain | BuiltElement
+	__index = error_wrong_index,
+	__newindex = error_wrong_newindex,
 }
 
 
