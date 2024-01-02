@@ -190,7 +190,7 @@ print(elem)
 
 ```lua
 local elem = a.div["#my-id my-class-1 my-class-2"] {
-	a.p "You know what it is.",
+   a.p "You know what it is.",
 }
 print(elem)
 ```
@@ -203,7 +203,7 @@ local attr = {
    class="my-class-1 my-class-2",
 }
 local elem = a.div[attr] {
-	a.p "You know what it is.",
+   a.p "You know what it is.",
 }
 print(elem)
 ```
