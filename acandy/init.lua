@@ -337,7 +337,7 @@ local function get_elem_prop(self, key)
 end
 
 
----@param self BareElement | BuildingElement
+---@param self BareElement | BuildingElement | BuiltElement
 ---@param props any
 ---@return BuiltElement
 local function new_built_elem_from_props(self, props)
@@ -600,7 +600,13 @@ BuiltElement_mt = {
 }
 ElementChain_mt = {
 	__tostring = elem_chain_to_string,  --> string
-	__call = function(self) return (elem_chain_to_built_elem(self)) end,  --> BuiltElement
+	__call = function(self, props)  --> BuiltElement
+		local root_elem, leaf_elem = elem_chain_to_built_elem(self)
+		local new_leaf_elem = new_built_elem_from_props(leaf_elem, props)
+		leaf_elem[SYM_ATTR_MAP] = new_leaf_elem[SYM_ATTR_MAP]
+		leaf_elem[SYM_CHILDREN] = new_leaf_elem[SYM_CHILDREN]
+		return root_elem
+	end,
 	__div = elem_chain_division,  --> ElementChain | BuiltElement
 	__index = error_wrong_index,
 	__newindex = error_wrong_newindex,
