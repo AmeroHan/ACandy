@@ -34,17 +34,18 @@ print(example)
 Output (formatted): / 输出（经过格式化）：
 
 ```html
-<h2>Hello!</h2>
-<div id="container" class="container">
+<h1 id="top" class="heading heading-1">Hello!</h1>
+<div style="margin: 0 auto;" class="container">
    <p>
-      There is <strong>an example of strong</strong>.
-      <br>
-      This is the second line.
+      My name is <dfn>ACandy</dfn>, a module for building HTML.<br>
+      Thank you for your visit.
    </p>
+   <p>visitors:</p>
    <ul>
       <li>Alice</li>
       <li>Bob</li>
-      <li>Charlie</li>
+      <li>Carol</li>
+      <li>...</li>
    </ul>
 </div>
 ```
