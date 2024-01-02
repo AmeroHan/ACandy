@@ -11,7 +11,7 @@ local example1 = (
 		a.h2 "Hello!",
 		-- Table is accepted as argument.
 		-- Map part represents attributes, array part represents children.
-		a.div { class="container", id="container",
+		a.div { id="container", class="container",
 			a.p {
 				"There is ", a.strong "an example of strong", ".",
 				a.br,  -- Putting a constructer without calling is allowed.
@@ -173,10 +173,10 @@ print(example5)
 -----------------
 --  EXAMPLE 6  --
 -----------------
-
+local template_attrs = { class="foo", style="color: green;" }
 local example6 = a.header["site-header"] / a.nav / a.ul {
-	a.li / a.a { href="/home", "Home" },
-	a.li / a.a { href="/posts", "Posts" },
+	a.li["foo"] / a.a { href="/home", "Home" },
+	a.li[template_attrs] / a.a { href="/posts", "Posts" },
 	a.li / a.a { href="/about", "About" },
 }
 print(example6)
@@ -184,10 +184,49 @@ print(example6)
 <header class="site-header">
 	<nav>
 		<ul>
-			<li><a href="/home">Home</a></li>
-			<li><a href="/posts">Posts</a></li>
+			<li class="foo"><a href="/home">Home</a></li>
+			<li class="foo" style="color: green;"><a href="/posts">Posts</a></li>
 			<li><a href="/about">About</a></li>
 		</ul>
 	</nav>
 </header>
+]]
+
+
+-----------------
+--  EXAMPLE 7  --
+-----------------
+
+local some = a.some
+local example7 = a.table {
+	a.tr / some.th['foo']("One", "Two", "Three"),
+	a.tr / some.td('A', 'B', 'C'),
+}
+print(example7)
+--[[ Output (formated):
+<table>
+	<tr>
+		<th class="foo">One</th>
+		<th class="foo">Two</th>
+		<th class="foo">Three</th>
+	</tr>
+	<tr>
+		<td>A</td>
+		<td>B</td>
+		<td>C</td>
+	</tr>
+</table>
+]]
+--[[
+```
+some.th[<index>](<arg1>, <arg2>, ...)
+```
+is equivalent to
+```
+a.Fragment {
+	a.th[<index>](<arg1>),
+	a.th[<index>](<arg2>),
+	...
+}
+```
 ]]

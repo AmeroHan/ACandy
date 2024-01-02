@@ -31,6 +31,15 @@ function utils.shallow_icopy(t)
 end
 
 
+function utils.map_varargs(func, ...)
+	local t = {}
+	for i, v in ipairs {...} do
+		t[i] = func(v)
+	end
+	return t
+end
+
+
 local REMOVE_EMPTY_PREFIXS = {
 	[true] = true,
 	['^'] = true,

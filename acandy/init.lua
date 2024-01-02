@@ -11,6 +11,8 @@ MIT License
 Copyright (c) 2023 AmeroHan
 ]]
 
+local acandy
+
 local type = type
 local pairs = pairs
 local assert = assert
@@ -107,12 +109,13 @@ local Fragment_mt = {
 
 
 --- Constructor of Fragment.
----@param children table
+---@param children any?
 ---@return Fragment
 local function Fragment(children)
-	-- 浅拷贝children，避免影响children的元表
-	local frag = utils.shallow_icopy(children)
-	return setmetatable(frag, Fragment_mt)
+	if type(children) == 'table' and not rawget(children, SYM_TAG_NAME) then
+		return setmetatable(utils.shallow_icopy(children), Fragment_mt)
+	end
+	return setmetatable({children}, Fragment_mt)
 end
 
 
@@ -167,8 +170,6 @@ my_div.id = "new-id"
 ```
 ]]
 
----@class ElementChain
-
 ---@class BuiltElement
 --[[
 ### BuiltElement
@@ -188,6 +189,8 @@ local built_pre2 = acandy.pre['lang-lua'] "print('Hello, ACandy!')"
 Although named "Built", it is still mutable. Its properties can be changed by
 assigning.
 ]]
+
+---@class ElementChain
 
 
 ---@param strs string[]
@@ -547,13 +550,11 @@ local function elem_chain_division(self, other)
 		return new_chain
 	elseif other_mt == ElementChain_mt then
 		return connect_elem_chains(self, other)
-	elseif other_mt == BuiltElement_mt or other_mt == Fragment_mt then
-		local root_elem, leaf_elem = elem_chain_to_built_elem(self)
-		leaf_elem[SYM_CHILDREN][1] = other
-		return root_elem
 	end
 
-	error('improper usage', 2)
+	local root_elem, leaf_elem = elem_chain_to_built_elem(self)
+	leaf_elem[SYM_CHILDREN][1] = other
+	return root_elem
 end
 
 
@@ -615,14 +616,14 @@ ElementChain_mt = {
 ---    end
 --- end)  --> {1, 2, 3, 4, 5}
 --- ```
----@param func fun(yield: fun(v: any))
+---@param func fun(yield: fun(value: any))
 ---@return Fragment
 local function new_frag_from_yields(self, func)
 	local result = {}
 	local n = 0
-	local function yield(v)
+	local function yield(value)
 		n = n + 1
-		result[n] = v
+		result[n] = value
 	end
 	func(yield)
 	return setmetatable(result, Fragment_mt)
@@ -660,28 +661,49 @@ local bare_elems_cache = {}  ---@type {[string]: BareElement}
 
 
 --- When indexing a tag name, returns a constructor of that element.
----@param k string
+---@param key string
 ---@return fun(param?: table | string): table | nil
-function acandy_mt:__index(k)
-	if not utils.is_valid_xml_name(k) then
-		error('invalid tag name: '..k, 2)
+function acandy_mt:__index(key)
+	if not utils.is_valid_xml_name(key) then
+		error('invalid tag name: '..key, 2)
 	end
 
-	local lower_k = k:lower()
-	if HTML_ELEMS[lower_k] then
-		k = lower_k
+	local lower_key = key:lower()
+	if HTML_ELEMS[lower_key] then
+		key = lower_key
 	end
 
-	if not bare_elems_cache[k] then
-		bare_elems_cache[k] = BareElement(k)
+	if not bare_elems_cache[key] then
+		bare_elems_cache[key] = BareElement(key)
 	end
-	return bare_elems_cache[k]
+	return bare_elems_cache[key]
 end
 
 
-local acandy = setmetatable({
+local some = setmetatable({}, {
+	__index = function(self, key)
+		local bare_elem = acandy_mt.__index(nil, key)
+
+		local mt = {}
+		function mt:__index(shorthand)
+			local building_elem = bare_elem[shorthand]
+			return function(...)
+				return setmetatable(utils.map_varargs(building_elem, ...), Fragment_mt)
+			end
+		end
+		function mt:__call(...)
+			return setmetatable(utils.map_varargs(bare_elem, ...), Fragment_mt)
+		end
+
+		return setmetatable({}, mt)
+	end
+})
+
+
+acandy = setmetatable({
 	Fragment = Fragment,
 	from_yields = from_yields,
+	some = some,
 }, acandy_mt)
 
 return acandy
