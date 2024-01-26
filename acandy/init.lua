@@ -153,7 +153,7 @@ Fragment_mt = {
 ---@param children any?
 ---@return Fragment
 local function Fragment(children)
-	if type(children) == 'table' and not rawget(children, SYM_TAG_NAME) then
+	if type(children) == 'table' and is_table_fragment_like(children) then
 		return setmetatable(utils.shallow_icopy(children), Fragment_mt)
 	end
 	return setmetatable({children}, Fragment_mt)
