@@ -21,6 +21,7 @@ local ipairs = ipairs
 local rawget = rawget
 local rawset = rawset
 local tostring = tostring
+local getmetatable = getmetatable
 local setmetatable = setmetatable
 
 local utils = require('acandy.utils')
@@ -37,6 +38,9 @@ local SYM_STRING = {} ---@type Symbol
 local SYM_CHILDREN = {} ---@type Symbol
 local SYM_TAG_NAME = {} ---@type Symbol
 
+local MTKEY_FRAG_LIKE = '__acandy_fragment_like'
+local MTKEY_PROPS_LIKE = '__acandy_props_like'
+
 
 --[[
 ## Fragment
@@ -45,6 +49,20 @@ A Fragment is an array-like table with metatable `Fragment_mt`.
 ]]
 
 ---@class Fragment: table
+
+--- Metatable used by Fragment object.
+---@type metatable
+local Fragment_mt
+
+
+--- Whether `t` can be treated as a Fragment.
+---@param t table
+---@return boolean
+local function is_table_fragment_like(t)
+	local mt = getmetatable(t)
+	return not mt or mt == Fragment_mt or mt[MTKEY_FRAG_LIKE] == true
+end
+
 
 --- Append the serialized string of the Fragment to `strs`.
 --- Use len to avoid calling `#strs` repeatedly. This improves performance by
@@ -59,8 +77,7 @@ local function extend_strings_with_fragment(strs, frag, strs_len, no_encode)
 
 	local function append_serialized(node)
 		local node_type = type(node)
-		if node_type == 'table' and not rawget(node, SYM_TAG_NAME) then
-			-- Fragment
+		if node_type == 'table' and is_table_fragment_like(node) then  -- Fragment
 			for _, child_node in ipairs(node) do
 				append_serialized(child_node)
 			end
@@ -91,9 +108,7 @@ local function concat_fragment(frag)
 end
 
 
---- Metatable used by Fragment object.
----@type metatable
-local Fragment_mt = {
+Fragment_mt = {
 	__tostring = concat_fragment,
 	__index = {
 		concat = table.concat,
@@ -338,18 +353,26 @@ local function get_elem_prop(self, key)
 end
 
 
+local function is_table_props_like(t)
+	local mt = getmetatable(t)
+	return not mt or mt[MTKEY_PROPS_LIKE] == true
+end
+
+
 ---@param self BareElement | BuildingElement | BuiltElement
----@param props any
+---@param props_or_child any
 ---@return BuiltElement
-local function new_built_elem_from_props(self, props)
+local function new_built_elem_from_props(self, props_or_child)
 	local tag_name = self[SYM_TAG_NAME]
 	local attr_map = rawget(self, SYM_ATTR_MAP) or {}
 	local new_attr_map = utils.shallow_copy(attr_map)
+	local arg_is_props_like = type(props_or_child) == 'table' and is_table_props_like(props_or_child)
 
-	if VOID_ELEMS[tag_name] then
-		-- void element, e.g. <br>, <img>
-		if type(props) == 'table' then
-			for k, v in pairs(props) do
+	if VOID_ELEMS[tag_name] then  -- void element, e.g. <br>, <img>
+		if arg_is_props_like then
+			-- props_or_child is props
+			-- set attributes
+			for k, v in pairs(props_or_child) do
 				if type(k) == 'string' then
 					if not utils.is_valid_xml_name(k) then
 						error('invalid attribute name: '..k, 2)
@@ -362,8 +385,9 @@ local function new_built_elem_from_props(self, props)
 	end
 
 	local new_children = {}
-	if type(props) == 'table' then
-		for k, v in pairs(props) do
+	if arg_is_props_like then
+		-- props_or_child is props
+		for k, v in pairs(props_or_child) do
 			if type(k) == 'number' then
 				new_children[k] = v;
 			elseif type(k) == 'string' then
@@ -373,8 +397,8 @@ local function new_built_elem_from_props(self, props)
 				new_attr_map[k] = v;
 			end
 		end
-	else
-		new_children[1] = props
+	else  -- props_or_child is child
+		new_children[1] = props_or_child
 	end
 
 	return BuiltElement(tag_name, new_attr_map, new_children)
@@ -415,7 +439,7 @@ local function set_elem_prop(self, key, val)
 		end
 		self[SYM_ATTR_MAP][key] = val
 	elseif type(key) == 'number' then
-		-- e.g. elem[1] = P 'Lorem ipsum dolor sit amet...'
+		-- e.g. elem[1] = 'Lorem ipsum dolor sit amet...'
 		if nil == val then
 			table.remove(self[SYM_CHILDREN], key)
 		else
