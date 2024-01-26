@@ -8,7 +8,7 @@ Version requirement: Lua 5.1 or higher
 
 GitHub: https://github.com/AmeroHan/ACandy
 MIT License
-Copyright (c) 2023 AmeroHan
+Copyright (c) 2023 - 2024 AmeroHan
 ]]
 
 local acandy
@@ -24,9 +24,9 @@ local tostring = tostring
 local setmetatable = setmetatable
 
 local utils = require('acandy.utils')
-local VOID_ELEMS, HTML_ELEMS = (function()
+local VOID_ELEMS, HTML_ELEMS, NO_ENCODE_ELEMS = (function()
 	local config = require('acandy.elem_config')
-	return config.VOID_ELEMS, config.HTML_ELEMS
+	return config.VOID_ELEMS, config.HTML_ELEMS, config.NO_ENCODE_ELEMS
 end)()
 
 
@@ -51,8 +51,9 @@ A Fragment is an array-like table with metatable `Fragment_mt`.
 --- ~1/3.
 ---@param strs table
 ---@param frag table
----@param strs_len? integer # of `strs`, used to optimize performance.
-local function extend_strings_with_fragment(strs, frag, strs_len)
+---@param strs_len? integer number of `strs`, used to optimize performance.
+---@param no_encode? boolean true to prevent encoding strings, e.g. when in <script>.
+local function extend_strings_with_fragment(strs, frag, strs_len, no_encode)
 	if #frag == 0 then return end
 	strs_len = strs_len or #strs
 
@@ -67,7 +68,7 @@ local function extend_strings_with_fragment(strs, frag, strs_len)
 			append_serialized(node())
 		elseif node_type == 'string' then
 			strs_len = strs_len + 1
-			strs[strs_len] = utils.html_encode(node)
+			strs[strs_len] = no_encode and node or utils.html_encode(node)
 		else  -- others: Element, boolean, number
 			strs_len = strs_len + 1
 			strs[strs_len] = tostring(node)
@@ -308,7 +309,7 @@ local function elem_to_string(self)
 	end
 
 	-- format children
-	extend_strings_with_fragment(result, self[SYM_CHILDREN])
+	extend_strings_with_fragment(result, self[SYM_CHILDREN], nil, NO_ENCODE_ELEMS[tag_name])
 	-- format close tag
 	result[#result+1] = '</'
 	result[#result+1] = tag_name
@@ -666,7 +667,7 @@ local acandy_mt = {}  ---@type metatable
 local bare_elems_cache = {}  ---@type {[string]: BareElement}
 
 
---- When indexing a tag name, returns a constructor of that element.
+--- When indexing a tag name, return a constructor of that element.
 ---@param key string
 ---@return fun(param?: table | string): table | nil
 function acandy_mt:__index(key)

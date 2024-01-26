@@ -40,4 +40,8 @@ config.VOID_ELEMS = {
 	wbr=true,
 }
 
+config.NO_ENCODE_ELEMS = {
+	script=true, style=true,
+}
+
 return config
