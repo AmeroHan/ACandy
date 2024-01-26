@@ -132,7 +132,7 @@ print(elem)
 以下表将被视为序列：
 - 未设置元表的表，如 `{ 1, 2, 3 }`；
 - 由 [`a.Fragment`](#acandyfragment) 返回的表，如 `a.Fragment { 1, 2, 3 }`；
-- 元表的 `"__acandy_fragment_like"` 字段为 `true` 的表，例如，可通过 `getmetatable(*val*).__acandy_fragment_like = true` 使 `*val*` 在字符串化时被视作序列。
+- 元表的 `"__acandy_fragment_like"` 字段为 `true` 的表，例如，可通过 <code>getmetatable(*val*).__acandy_fragment_like = true</code> 使 <code>*val*</code> 在字符串化时被视作序列。
 
 除此之外的表（如 `a.p { 1, 2, 3 }` 返回的表）会被直接通过 `tostring` 转换为字符串，未定义 `__tostring` 的表会引发错误。
 
