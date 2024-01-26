@@ -87,7 +87,7 @@ print(elem)
 ```
 
 > [!TIP]
-> - 你不需要在字符串中处理 HTML 转义。
+> - 你不需要在字符串中处理 HTML 转义。如果不期望自动的转义，可以将内容放在 [`a.Raw`](#acandyraw) 中。
 > - 子元素并不必须是元素或字符串——虽然这里只展示了这两类，一切能 `tostring` 的值均可作为子元素。
 
 ### 属性
@@ -104,9 +104,9 @@ print(elem)
 
 #### 元素、字符串、数字、布尔值等后文没有提到的值
 
-在元素字符串化时，对这些值尝试 `tostring`，并转义其中的 `< > &`。
+在元素字符串化时，对这些值尝试 `tostring`，并转义其中的 `< > &`。如果不期望自动的转义，可以将内容放在 [`a.Raw`](#acandyraw) 中。
 
-在下面这个例子中，我们将三个元素（`<p>`）作为 `<article>` 的子元素，并分别将字符串、数字、布尔值作为 `<p>` 的元素。结果是显而易见的。
+在下面这个例子中，我们将三个元素（`<p>`）作为 `<article>` 的子元素，并分别将字符串、数字、布尔值作为 `<p>` 的元素。结果显而易见。
 
 ```lua
 local elem = a.article {
@@ -274,7 +274,7 @@ print(elem)
 Fragment 承载多个元素。`a.Fragment` 和普通表的仅有的区别就是：
 
 - 设置了 `__tostring`，可以得到 HTML 字符串；
-- 设置了 `__index`，可以以类似面向对象的形式调用 `table.insert`、`table.remove` 等 `table` 模块中的方法。
+- 设置了 `__index`，可以以类似面向对象的形式调用 `table.insert`、`table.remove` 等 `table` 库中所有以表为第一个参数的方法。
 
 可以通过 `a.Fragment()` 或 `a.Fragment({})` 创建一个空的 Fragment。
 
@@ -295,6 +295,31 @@ print(frag)
 <p>First paragraph.</p>
 <p>Second paragraph.</p>
 <p>Third paragraph.</p>
+```
+
+### `acandy.Raw`
+
+`a.Raw` 用于使字符串在最终不被转义。它接收任意类型的值，并调用 `tostring`，存储于内部。
+
+- 设置了 `__tostring`，可以得到对应字符串；
+- 设置了 `__concat`，可以连接两个由 `a.Raw` 得到的对象。
+
+例子：
+
+```lua
+local elem = a.ul {
+   a.li "foo <br> bar",
+   a.li(a.Raw "foo <br> bar"),
+   a.li(a.Raw("<span>foo")..a.Raw("bar</span>")),
+}
+```
+
+```html
+<ul>
+   <li>foo &lt;br&gt; bar</li>
+   <li>foo <br> bar</li>
+   <li><span>foobar</span></li>
+</ul>
 ```
 
 ### `acandy.from_yields`
@@ -413,6 +438,6 @@ print(items)
 
 ## Contribution / 贡献
 
-Contributions of any form are welcomed! 
+Contributions of any form are welcomed, including bug reports, feature suggestions, documentation improvement, code optimization and so on!
 
-欢迎任何形式的贡献！
+欢迎任何形式的贡献！包括但不限于汇报缺陷、提出功能建议、完善文档、优化代码。
