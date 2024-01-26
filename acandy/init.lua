@@ -42,6 +42,31 @@ local MTKEY_FRAG_LIKE = '__acandy_fragment_like'
 local MTKEY_PROPS_LIKE = '__acandy_props_like'
 
 
+local Raw_mt  ---@type metatable
+
+--- Create a Raw object, which would not be encoded when converted to string.
+--- @param val any value to be converted to string by `tostring()`
+--- @return table
+local function Raw(val)
+	return setmetatable({[SYM_STRING] = tostring(val)}, Raw_mt)
+end
+
+Raw_mt = {
+	__tostring = function(self)
+		return self[SYM_STRING]
+	end,
+	__concat = function(left, right)
+		if getmetatable(left) ~= Raw_mt or getmetatable(right) ~= Raw_mt then
+			error('Raw object can only be concatenated with another Raw object', 2)
+		end
+		return setmetatable({[SYM_STRING] = left[SYM_STRING]..right[SYM_STRING]}, Raw_mt)
+	end,
+	__newindex = function()
+		error('Raw object is not mutable', 2)
+	end,
+}
+
+
 --[[
 ## Fragment
 
@@ -86,7 +111,7 @@ local function extend_strings_with_fragment(strs, frag, strs_len, no_encode)
 		elseif node_type == 'string' then
 			strs_len = strs_len + 1
 			strs[strs_len] = no_encode and node or utils.html_encode(node)
-		else  -- others: Element, boolean, number
+		else  -- others: Raw, Element, boolean, number
 			strs_len = strs_len + 1
 			strs[strs_len] = tostring(node)
 		end
@@ -366,7 +391,7 @@ local function new_built_elem_from_props(self, props_or_child)
 	local tag_name = self[SYM_TAG_NAME]
 	local attr_map = rawget(self, SYM_ATTR_MAP) or {}
 	local new_attr_map = utils.shallow_copy(attr_map)
-	local arg_is_props_like = type(props_or_child) == 'table' and is_table_props_like(props_or_child)
+local arg_is_props_like = type(props_or_child) == 'table' and is_table_props_like(props_or_child)
 
 	if VOID_ELEMS[tag_name] then  -- void element, e.g. <br>, <img>
 		if arg_is_props_like then
@@ -733,6 +758,7 @@ local some = setmetatable({}, {
 
 acandy = setmetatable({
 	Fragment = Fragment,
+	Raw = Raw,
 	from_yields = from_yields,
 	some = some,
 }, acandy_mt)

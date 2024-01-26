@@ -1,8 +1,10 @@
 local a = require("acandy")
 
 
------------------
---  EXAMPLE 1  --
+-- TODO: test cases
+
+
+-- 1. Basic usage
 -----------------
 
 local example1 = (
@@ -51,9 +53,8 @@ print(example1)
 ]]
 
 
------------------
---  EXAMPLE 2  --
------------------
+-- 2. Custom component
+----------------------
 
 local Card = function(props)
 	return a.div { class="card",
@@ -79,9 +80,8 @@ print(example2)
 ]]
 
 
------------------
---  EXAMPLE 3  --
------------------
+-- 3. Element manipulation
+--------------------------
 
 local example3 = a.div()
 print(example3)
@@ -108,9 +108,8 @@ print(example3)
 --> <br id="example3">
 
 
------------------
---  EXAMPLE 4  --
------------------
+-- 4. acandy.from_yields - derive a Fragment from a generator function
+----------------------------------------------------------------------
 
 local height_weights = {
 	{ name = "Alice", height = 160, weight = 50 },
@@ -126,8 +125,8 @@ local example4 = a.table {
 		for _, item in ipairs(height_weights) do
 			yield(a.tr {
 				a.td(item.name),
-				a.td(item.height..' cm'),
-				a.td(item.weight..' kg'),
+				a.td(item.height.." cm"),
+				a.td(item.weight.." kg"),
 			})
 		end
 	end,  -- or `a.from_yields(function(yield) ... end)`
@@ -159,9 +158,8 @@ print(example4)
 ]]
 
 
------------------
---  EXAMPLE 5  --
------------------
+-- 5. Shorthand attributes
+--------------------------
 
 local example5 = a.div["#my-div cls1 cls2"] {
 	a.p "You know what it is.",
@@ -170,9 +168,9 @@ print(example5)
 --> <div id="my-div" class="cls1 cls2"><p>You know what it is.</p></div>
 
 
------------------
---  EXAMPLE 6  --
------------------
+-- 6. Element chains
+--------------------
+
 local template_attrs = { class="foo", style="color: green;" }
 local example6 = a.header["site-header"] / a.nav / a.ul {
 	a.li["foo"] / a.a { href="/home", "Home" },
@@ -193,14 +191,27 @@ print(example6)
 ]]
 
 
------------------
---  EXAMPLE 7  --
------------------
 
+-- 7. acandy.some - Construct multiple elements
+-----------------------------------------------
+
+--[[
+```
+some.th[<index>](<arg1>, <arg2>, ...)
+```
+is equivalent to
+```
+a.Fragment {
+	a.th[<index>](<arg1>),
+	a.th[<index>](<arg2>),
+	...
+}
+```
+]]
 local some = a.some
 local example7 = a.table {
-	a.tr / some.th['foo']("One", "Two", "Three"),
-	a.tr / some.td('A', 'B', 'C'),
+	a.tr / some.th["foo"]("One", "Two", "Three"),
+	a.tr / some.td("A", "B", "C"),
 }
 print(example7)
 --[[ Output (formated):
@@ -217,16 +228,22 @@ print(example7)
 	</tr>
 </table>
 ]]
---[[
-```
-some.th[<index>](<arg1>, <arg2>, ...)
-```
-is equivalent to
-```
-a.Fragment {
-	a.th[<index>](<arg1>),
-	a.th[<index>](<arg2>),
-	...
+
+
+-- 8. Raw strings
+-----------------
+
+local example8_a = a.ul {
+	a.li "Encoded: <br>",
+	a.li / a.Raw("Remain: <br>"),
 }
-```
+print(example8_a)
+--[[ Output (formated):
+<ul>
+	<li>Encoded: &lt;br&gt;</li>
+	<li>Remain: <br></li>
+</ul>
 ]]
+
+local example8_b = a.div(a.Raw("<span>")..a.Raw("</span>"))
+print(example8_b)  --> <div><span></span></div>

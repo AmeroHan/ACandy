@@ -31,6 +31,10 @@ function utils.shallow_icopy(t)
 end
 
 
+--- Apply `func` to each element of `...` and return a table.
+---@param func function
+---@vararg any
+---@return any[]
 function utils.map_varargs(func, ...)
 	local t = {}
 	for i, v in ipairs {...} do
