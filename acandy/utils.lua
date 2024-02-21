@@ -32,7 +32,7 @@ end
 
 
 --- Apply `func` to each element of `...` and return a table.
----@param func function
+---@param func function | table callable
 ---@vararg any
 ---@return any[]
 function utils.map_varargs(func, ...)

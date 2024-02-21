@@ -11,8 +11,6 @@ MIT License
 Copyright (c) 2023 - 2024 AmeroHan
 ]]
 
-local acandy
-
 local type = type
 local pairs = pairs
 local assert = assert
@@ -711,34 +709,37 @@ local from_yields = setmetatable({}, {
 })
 
 
+local acandy
 --- Metatable used by this module.
-local acandy_mt = {}  ---@type metatable
-local bare_elems_cache = {}  ---@type {[string]: BareElement}
+local acandy_mt = {  ---@type metatable
+	--- When indexing a uncached tag name, return a constructor of that element.
+	---@param key string
+	---@return BareElement
+	__index = function(self, key)
+		if not utils.is_valid_xml_name(key) then
+			error('invalid tag name: '..tostring(key), 2)
+		end
 
-
---- When indexing a tag name, return a constructor of that element.
----@param key string
----@return fun(param?: table | string): table | nil
-function acandy_mt:__index(key)
-	if not utils.is_valid_xml_name(key) then
-		error('invalid tag name: '..key, 2)
-	end
-
-	local lower_key = key:lower()
-	if HTML_ELEMS[lower_key] then
-		key = lower_key
-	end
-
-	if not bare_elems_cache[key] then
-		bare_elems_cache[key] = BareElement(key)
-	end
-	return bare_elems_cache[key]
-end
+		local lower_key = key:lower()
+		local bare_elem
+		if lower_key ~= key and HTML_ELEMS[lower_key] then
+			bare_elem = rawget(self, lower_key)
+			if not bare_elem then
+				bare_elem = BareElement(lower_key)
+				self[lower_key] = bare_elem
+			end
+		else
+			bare_elem = BareElement(key)
+		end
+		self[key] = bare_elem
+		return bare_elem
+	end,
+}
 
 
 local some = setmetatable({}, {
 	__index = function(self, key)
-		local bare_elem = acandy_mt.__index(nil, key)
+		local bare_elem = acandy[key]
 
 		local mt = {}
 		function mt:__index(shorthand)
