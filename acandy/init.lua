@@ -158,16 +158,6 @@ local function Fragment(children)
 end
 
 
---[[
-## Element
-
-An Element is an object which can read tag name, attributes and child nodes,
-allowing to be converted to HTML code by using `tostring(element)`.
-Elements contains properties, which are tag name, attributes and child nodes.
-Properties can be read/assigned by indexing/assigning the element, like
-`elem.tag_name = 'p'`, `elem[1]` or `elem.class`.
-]]
-
 ---@class BareElement
 --[[
 ### BareElement
@@ -372,7 +362,7 @@ local function get_elem_prop(self, key)
 		return self[SYM_CHILDREN][key]
 	end
 
-	error('Element键类型只能是string或number', 2)
+	error("element property key type is neither 'string' nor 'number'", 2)
 end
 
 
@@ -389,7 +379,7 @@ local function new_built_elem_from_props(self, props_or_child)
 	local tag_name = self[SYM_TAG_NAME]
 	local attr_map = rawget(self, SYM_ATTR_MAP) or {}
 	local new_attr_map = utils.shallow_copy(attr_map)
-local arg_is_props_like = type(props_or_child) == 'table' and is_table_props_like(props_or_child)
+	local arg_is_props_like = type(props_or_child) == 'table' and is_table_props_like(props_or_child)
 
 	if VOID_ELEMS[tag_name] then  -- void element, e.g. <br>, <img>
 		if arg_is_props_like then
@@ -448,13 +438,13 @@ local function set_elem_prop(self, key, val)
 
 		-- 根据元素类型，创建/删除子节点
 		if VOID_ELEMS[val] and rawget(self, SYM_CHILDREN) then
-			rawset(self, SYM_CHILDREN, nil)
+			self[SYM_CHILDREN] = nil
 		elseif not (VOID_ELEMS[val] or rawget(self, SYM_CHILDREN)) then
 			rawset(self, SYM_CHILDREN, {})
 		end
 
 		-- 为tag_name赋值
-		rawset(self, SYM_TAG_NAME, val)
+		self[SYM_TAG_NAME] = val
 	elseif type(key) == 'string' then
 		-- e.g. elem.class = 'content'
 		if not utils.is_valid_xml_name(key) then
@@ -463,7 +453,7 @@ local function set_elem_prop(self, key, val)
 		self[SYM_ATTR_MAP][key] = val
 	elseif type(key) == 'number' then
 		-- e.g. elem[1] = 'Lorem ipsum dolor sit amet...'
-		if nil == val then
+		if val == nil then
 			table.remove(self[SYM_CHILDREN], key)
 		else
 			self[SYM_CHILDREN][key] = val
@@ -577,53 +567,57 @@ local function elem_chain_to_built_elem(chain)
 end
 
 
----@param self ElementChain
----@param other any
+---@param left ElementChain
+---@param right any
 ---@return ElementChain | BuiltElement
-local function elem_chain_division(self, other)
-	local other_mt = getmetatable(other)
+local function elem_chain_div(left, right)
+	local right_mt = getmetatable(right)
 
-	if other_mt == BareElement_mt or other_mt == BuildingElement_mt then
-		local other_tag_name = other[SYM_TAG_NAME]
-		local other_attr_map = rawget(other, SYM_ATTR_MAP)
+	if right_mt == BareElement_mt or right_mt == BuildingElement_mt then
+		local right_tag_name = right[SYM_TAG_NAME]
+		local right_attr_map = rawget(right, SYM_ATTR_MAP)
 
-		if VOID_ELEMS[other_tag_name] then
-			local root_elem, leaf_elem = elem_chain_to_built_elem(self)
-			leaf_elem[SYM_CHILDREN][1] = BuiltElement(other_tag_name, other_attr_map or {})
+		if VOID_ELEMS[right_tag_name] then
+			local root_elem, leaf_elem = elem_chain_to_built_elem(left)
+			leaf_elem[SYM_CHILDREN][1] = BuiltElement(right_tag_name, right_attr_map or {})
 			return root_elem
 		end
 
-		local new_chain = copy_elem_chain(self)
-		append_elem_to_elem_chain(new_chain, other_tag_name, other_attr_map)
+		local new_chain = copy_elem_chain(left)
+		append_elem_to_elem_chain(new_chain, right_tag_name, right_attr_map)
 		return new_chain
-	elseif other_mt == ElementChain_mt then
-		return connect_elem_chains(self, other)
+	elseif right_mt == ElementChain_mt then
+		return connect_elem_chains(left, right)
 	end
 
-	local root_elem, leaf_elem = elem_chain_to_built_elem(self)
-	leaf_elem[SYM_CHILDREN][1] = other
+	local root_elem, leaf_elem = elem_chain_to_built_elem(left)
+	leaf_elem[SYM_CHILDREN][1] = right
 	return root_elem
 end
 
 
----@param self BareElement | BuildingElement
----@param other any
+---@param left BareElement | BuildingElement | any
+---@param right any | BareElement | BuildingElement
 ---@return ElementChain | BuiltElement
-local function elem_division(self, other)
-	local tag_name = self[SYM_TAG_NAME]
-	if VOID_ELEMS[tag_name] then
-		error('cannot perform division on a void element', 2)
+local function elem_div(left, right)
+	local left_mt = getmetatable(left)
+	if left_mt ~= BareElement_mt and left_mt ~= BuildingElement_mt then
+		error('attempt to div a '..type(left)..' with an element', 2)
 	end
-	return elem_chain_division(ElementChain({tag_name}, {rawget(self, SYM_ATTR_MAP)}), other)
+	local tag_name = left[SYM_TAG_NAME]
+	if VOID_ELEMS[tag_name] then
+		error('attempt to perform division on a void element', 2)
+	end
+	return elem_chain_div(ElementChain({tag_name}, {rawget(left, SYM_ATTR_MAP)}), right)
 end
 
 
 local function error_wrong_index()
-	error("you can't access properties until it's been built (by calling it)", 2)
+	error("attempt to access properties of a unbuilt element", 2)
 end
 
 local function error_wrong_newindex()
-	error("you can't assign properties until it's been built (by calling it)", 2)
+	error("attempt to assign properties of a unbuilt element", 2)
 end
 
 
@@ -631,13 +625,13 @@ BareElement_mt = {
 	__tostring = bare_elem_to_string,  --> string
 	__index = new_building_elem_by_shorthand_attrs,  --> BuildingElement
 	__call = new_built_elem_from_props,  --> BuiltElement
-	__div = elem_division,  --> ElementChain | BuiltElement
+	__div = elem_div,  --> ElementChain | BuiltElement
 	__newindex = error_wrong_newindex,
 }
 BuildingElement_mt = {
 	__tostring = elem_to_string,  --> string
 	__call = new_built_elem_from_props,  --> BuiltElement
-	__div = elem_division,  --> ElementChain | BuiltElement
+	__div = elem_div,  --> ElementChain | BuiltElement
 	__index = error_wrong_index,
 	__newindex = error_wrong_newindex,
 }
@@ -645,6 +639,9 @@ BuiltElement_mt = {
 	__tostring = elem_to_string,  --> string
 	__index = get_elem_prop,
 	__newindex = set_elem_prop,
+	__div = function()
+		error('attempt to perform division on a built element', 2)
+	end
 }
 ElementChain_mt = {
 	__tostring = elem_chain_to_string,  --> string
@@ -655,7 +652,12 @@ ElementChain_mt = {
 		leaf_elem[SYM_CHILDREN] = new_leaf_elem[SYM_CHILDREN]
 		return root_elem
 	end,
-	__div = elem_chain_division,  --> ElementChain | BuiltElement
+	__div = function(left, right)  --> ElementChain | BuiltElement
+		if getmetatable(left) ~= ElementChain_mt then
+			error('attempt to div a '..type(left)..' with an element chain', 2)
+		end
+		return elem_chain_div(left, right)
+	end,
 	__index = error_wrong_index,
 	__newindex = error_wrong_newindex,
 }
@@ -672,7 +674,7 @@ ElementChain_mt = {
 --- ```
 ---@param func fun(yield: fun(value: any))
 ---@return Fragment
-local function new_frag_from_yields(self, func)
+local function new_frag_from_yields(_, func)
 	local result = {}
 	local n = 0
 	local function yield(value)
@@ -738,7 +740,7 @@ local acandy_mt = {  ---@type metatable
 
 
 local some = setmetatable({}, {
-	__index = function(self, key)
+	__index = function(_, key)
 		local bare_elem = acandy[key]
 
 		local mt = {}
