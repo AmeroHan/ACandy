@@ -13,14 +13,14 @@ Copyright (c) 2023 - 2024 AmeroHan
 
 local type = type
 local pairs = pairs
+local getmt = getmetatable
+local setmt = setmetatable
 local assert = assert
 local concat = table.concat
 local ipairs = ipairs
 local rawget = rawget
 local rawset = rawset
 local tostring = tostring
-local getmetatable = getmetatable
-local setmetatable = setmetatable
 
 local utils = require('acandy.utils')
 local VOID_ELEMS, HTML_ELEMS, NO_ENCODE_ELEMS = (function()
@@ -46,7 +46,7 @@ local Raw_mt  ---@type metatable
 --- @param val any value to be converted to string by `tostring()`
 --- @return table
 local function Raw(val)
-	return setmetatable({[SYM_STRING] = tostring(val)}, Raw_mt)
+	return setmt({[SYM_STRING] = tostring(val)}, Raw_mt)
 end
 
 Raw_mt = {
@@ -54,10 +54,10 @@ Raw_mt = {
 		return self[SYM_STRING]
 	end,
 	__concat = function(left, right)
-		if getmetatable(left) ~= Raw_mt or getmetatable(right) ~= Raw_mt then
+		if getmt(left) ~= Raw_mt or getmt(right) ~= Raw_mt then
 			error('Raw object can only be concatenated with another Raw object', 2)
 		end
-		return setmetatable({[SYM_STRING] = left[SYM_STRING]..right[SYM_STRING]}, Raw_mt)
+		return setmt({[SYM_STRING] = left[SYM_STRING]..right[SYM_STRING]}, Raw_mt)
 	end,
 	__newindex = function()
 		error('Raw object is not mutable', 2)
@@ -82,7 +82,7 @@ local Fragment_mt
 ---@param t table
 ---@return boolean
 local function is_table_fragment_like(t)
-	local mt = getmetatable(t)
+	local mt = getmt(t)
 	return not mt or mt == Fragment_mt or mt[MTKEY_FRAG_LIKE] == true
 end
 
@@ -152,9 +152,9 @@ Fragment_mt = {
 ---@return Fragment
 local function Fragment(children)
 	if type(children) == 'table' and is_table_fragment_like(children) then
-		return setmetatable(utils.shallow_icopy(children), Fragment_mt)
+		return setmt(utils.shallow_icopy(children), Fragment_mt)
 	end
-	return setmetatable({children}, Fragment_mt)
+	return setmt({children}, Fragment_mt)
 end
 
 
@@ -267,7 +267,7 @@ local function BareElement(tag_name)
 		[SYM_TAG_NAME] = tag_name,  ---@type string
 		[SYM_STRING] = str,  ---@type string
 	}
-	return setmetatable(elem, BareElement_mt)
+	return setmt(elem, BareElement_mt)
 end
 
 
@@ -280,7 +280,7 @@ local function BuildingElement(tag_name, attr_map)
 		[SYM_ATTR_MAP] = attr_map,
 		[SYM_CHILDREN] = not VOID_ELEMS[tag_name] and {} or nil,
 	}
-	return setmetatable(elem, BuildingElement_mt)
+	return setmt(elem, BuildingElement_mt)
 end
 
 
@@ -296,7 +296,7 @@ local function BuiltElement(tag_name, attr_map, children)
 		[SYM_ATTR_MAP] = attr_map,
 		[SYM_CHILDREN] = children,
 	}
-	return setmetatable(elem, BuiltElement_mt)
+	return setmt(elem, BuiltElement_mt)
 end
 
 
@@ -308,7 +308,7 @@ local function ElementChain(tag_names, attr_maps)
 		[SYM_TAG_NAME] = tag_names,
 		[SYM_ATTR_MAP] = attr_maps,
 	}
-	return setmetatable(elem_chain, ElementChain_mt)
+	return setmt(elem_chain, ElementChain_mt)
 end
 
 
@@ -367,7 +367,7 @@ end
 
 
 local function is_table_props_like(t)
-	local mt = getmetatable(t)
+	local mt = getmt(t)
 	return not mt or mt[MTKEY_PROPS_LIKE] == true
 end
 
@@ -489,7 +489,7 @@ local function copy_elem_chain(self)
 		[SYM_TAG_NAME] = utils.shallow_icopy(self[SYM_TAG_NAME]),
 		[SYM_ATTR_MAP] = utils.shallow_icopy(self[SYM_ATTR_MAP]),
 	}
-	return setmetatable(new_chain, ElementChain_mt)
+	return setmt(new_chain, ElementChain_mt)
 end
 
 
@@ -571,7 +571,7 @@ end
 ---@param right any
 ---@return ElementChain | BuiltElement
 local function elem_chain_div(left, right)
-	local right_mt = getmetatable(right)
+	local right_mt = getmt(right)
 
 	if right_mt == BareElement_mt or right_mt == BuildingElement_mt then
 		local right_tag_name = right[SYM_TAG_NAME]
@@ -600,7 +600,7 @@ end
 ---@param right any | BareElement | BuildingElement
 ---@return ElementChain | BuiltElement
 local function elem_div(left, right)
-	local left_mt = getmetatable(left)
+	local left_mt = getmt(left)
 	if left_mt ~= BareElement_mt and left_mt ~= BuildingElement_mt then
 		error('attempt to div a '..type(left)..' with an element', 2)
 	end
@@ -653,7 +653,7 @@ ElementChain_mt = {
 		return root_elem
 	end,
 	__div = function(left, right)  --> ElementChain | BuiltElement
-		if getmetatable(left) ~= ElementChain_mt then
+		if getmt(left) ~= ElementChain_mt then
 			error('attempt to div a '..type(left)..' with an element chain', 2)
 		end
 		return elem_chain_div(left, right)
@@ -682,7 +682,7 @@ local function new_frag_from_yields(_, func)
 		result[n] = value
 	end
 	func(yield)
-	return setmetatable(result, Fragment_mt)
+	return setmt(result, Fragment_mt)
 end
 
 --- Create a Fragment from a generator function.
@@ -705,7 +705,7 @@ end
 --- ```
 --- The reason why `^` is used is that `^` has a higher priority than `/`, which
 --- is used to create elements.
-local from_yields = setmetatable({}, {
+local from_yields = setmt({}, {
 	__call = new_frag_from_yields,
 	__pow = new_frag_from_yields,
 })
@@ -739,7 +739,7 @@ local acandy_mt = {  ---@type metatable
 }
 
 
-local some = setmetatable({}, {
+local some = setmt({}, {
 	__index = function(_, key)
 		local bare_elem = acandy[key]
 
@@ -747,19 +747,19 @@ local some = setmetatable({}, {
 		function mt:__index(shorthand)
 			local building_elem = bare_elem[shorthand]
 			return function(...)
-				return setmetatable(utils.map_varargs(building_elem, ...), Fragment_mt)
+				return setmt(utils.map_varargs(building_elem, ...), Fragment_mt)
 			end
 		end
 		function mt:__call(...)
-			return setmetatable(utils.map_varargs(bare_elem, ...), Fragment_mt)
+			return setmt(utils.map_varargs(bare_elem, ...), Fragment_mt)
 		end
 
-		return setmetatable({}, mt)
+		return setmt({}, mt)
 	end
 })
 
 
-acandy = setmetatable({
+acandy = setmt({
 	Fragment = Fragment,
 	Raw = Raw,
 	from_yields = from_yields,
