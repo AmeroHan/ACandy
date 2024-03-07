@@ -318,6 +318,7 @@ local elem = a.ul {
    a.li "foo <br> bar",
    a.li(a.Raw "foo <br> bar"),
    a.li(a.Raw("<span>foo")..a.Raw("bar</span>")),
+   a.li { a.Raw("<span>foo"), a.Raw("bar</span>") },
 }
 ```
 
@@ -325,6 +326,7 @@ local elem = a.ul {
 <ul>
    <li>foo &lt;br&gt; bar</li>
    <li>foo <br> bar</li>
+   <li><span>foobar</span></li>
    <li><span>foobar</span></li>
 </ul>
 ```
