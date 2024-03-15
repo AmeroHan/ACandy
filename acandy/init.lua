@@ -348,12 +348,15 @@ end
 
 
 --- Return tag name, attribute or child node depending on the key.
----@param self BuildingElement | BuiltElement
+---@param self BuiltElement
 ---@param key string | number
 local function get_elem_prop(self, key)
 	if key == 'tag_name' then
-		-- e.g. `elem.tag_name`
 		return self[SYM_TAG_NAME]
+	elseif key == 'children' then
+		return setmt(self[SYM_CHILDREN], Fragment_mt)
+	elseif key == 'attributes' then
+		return self[SYM_ATTR_MAP]
 	elseif type(key) == 'string' then
 		-- e.g. `elem.class`
 		return self[SYM_ATTR_MAP][key]
