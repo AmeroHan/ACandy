@@ -351,7 +351,7 @@ end
 ---@param self BuildingElement | BuiltElement
 ---@param key string | number
 local function get_elem_prop(self, key)
-	if key == 'tag_name' or key == 'tagname' then
+	if key == 'tag_name' then
 		-- e.g. `elem.tag_name`
 		return self[SYM_TAG_NAME]
 	elseif type(key) == 'string' then
@@ -423,7 +423,7 @@ end
 ---@param key string | number
 ---@param val any
 local function set_elem_prop(self, key, val)
-	if key == 'tag_name' or key == 'tagname' then
+	if key == 'tag_name' then
 		-- e.g. elem.tag_name = 'div'
 		if not utils.is_valid_xml_name(val) then
 			error('invalid tag name: '..val, 2)
