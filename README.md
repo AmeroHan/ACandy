@@ -1,10 +1,14 @@
 # ACandy: a sugary Lua module for building HTML
 
+<p align="center">
+This work uses <a href="https://semver.org/">Semantic Versioning</a> | 本项目使用<a href="https://semver.org/">语义化版本</a>
+</p>
+
 ACandy is a Lua module for building HTML, which takes advantage of Lua’s syntactic sugar and metatable, giving an intuitive way to build HTML from Lua. It is, maybe, an internal DSL.
 
 ACandy 是一个构建 HTML 的 Lua 模块。利用 Lua 的语法糖和元表，ACandy 提供了一个易用的方式来从 Lua 构建 HTML。大概算是一个内部 DSL。
 
-## Take a peek / 瞄一瞄
+## Take a peek | 瞄一瞄
 
 Check [examples.lua](./examples.lua) for more details about features, usages, etc.
 
@@ -31,7 +35,7 @@ local example = a.Fragment {
 print(example)
 ```
 
-Output (formatted): / 输出（经过格式化）：
+Output (formatted): | 输出（经过格式化）：
 
 ```html
 <h1 id="top" class="heading heading-1">Hello!</h1>
@@ -64,7 +68,7 @@ local a = require("acandy")
 
 下文的 `a` 均指代本模块。
 
-## Elements / 元素
+## Elements | 元素
 
 一个基本的例子如下：
 
@@ -445,7 +449,7 @@ print(items)
 </ul>
 ```
 
-## Contribution / 贡献
+## Contribution | 贡献
 
 Contributions of any form are welcomed, including bug reports, feature suggestions, documentation improvement, code optimization and so on!
 
