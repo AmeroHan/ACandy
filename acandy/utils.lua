@@ -2,8 +2,6 @@ local utils = {}
 
 local pairs = pairs
 local ipairs = ipairs
-local s_sub = string.sub
-local s_find = string.find
 local s_gsub = string.gsub
 local s_match = string.match
 
@@ -41,49 +39,6 @@ function utils.map_varargs(func, ...)
 		t[i] = func(v)
 	end
 	return t
-end
-
-
-local REMOVE_EMPTY_PREFIXS = {
-	[true] = true,
-	['^'] = true,
-	['^$'] = true,
-}
-local REMOVE_EMPTY_SUFFIXS = {
-	[true] = true,
-	['$'] = true,
-	['^$'] = true,
-}
-
---- Split string by separator.
----@param str string | number string to split
----@param sep string seperator, a pattern
----@param remove_empty? boolean | '^' | '$' | '^$'
-function utils.split(str, sep, remove_empty)
-	local out = {}
-	local last = 1
-	local start, stop = s_find(str, sep, last)
-
-	if start == 1 and REMOVE_EMPTY_PREFIXS[remove_empty] then
-		-- skip empty string at the beginning
-		last = stop + 1
-		start, stop = s_find(str, sep, start <= stop and last or (last + 1))
-	end
-
-	while start do
-		local sub = s_sub(str, last, start - 1)
-		if not (sub == '' and remove_empty == true) then
-			out[#out + 1] = sub
-		end
-		last = stop + 1
-		-- when start > stop (stop == start - 1), empty string is matched
-		start, stop = s_find(str, sep, start <= stop and last or (last + 1))
-	end
-
-	if last <= #str or not REMOVE_EMPTY_SUFFIXS[remove_empty] then
-		out[#out + 1] = s_sub(str, last)
-	end
-	return out
 end
 
 
