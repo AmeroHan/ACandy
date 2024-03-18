@@ -666,54 +666,6 @@ ElementChain_mt = {
 }
 
 
---- Create a Fragment from a generator function.
---- e.g.
---- ```
---- new_frag_from_yields(function(yield)
----    for i = 1, 5 do
----       yield(i)
----    end
---- end)  --> {1, 2, 3, 4, 5}
---- ```
----@param func fun(yield: fun(value: any))
----@return Fragment
-local function new_frag_from_yields(_, func)
-	local result = {}
-	local n = 0
-	local function yield(value)
-		n = n + 1
-		result[n] = value
-	end
-	func(yield)
-	return setmt(result, Fragment_mt)
-end
-
---- Create a Fragment from a generator function.
---- e.g.
---- ```
---- acandy.from_yields(function(yield)
----    for i = 1, 5 do
----       yield(i)
----    end
---- end)  --> {1, 2, 3, 4, 5}
---- ```
---- or with syntex sugar to avoid calling `from_yields`, which may increase
---- indentation level in some coding styles.
---- ```
---- acandy.from_yields ^ function(yield)
----    for i = 1, 5 do
----       yield(i)
----    end
---- end  --> {1, 2, 3, 4, 5}
---- ```
---- The reason why `^` is used is that `^` has a higher priority than `/`, which
---- is used to create elements.
-local from_yields = setmt({}, {
-	__call = new_frag_from_yields,
-	__pow = new_frag_from_yields,
-})
-
-
 local acandy
 --- Metatable used by this module.
 local acandy_mt = {  ---@type metatable
@@ -765,7 +717,6 @@ local some = setmt({}, {
 acandy = setmt({
 	Fragment = Fragment,
 	Raw = Raw,
-	from_yields = from_yields,
 	some = some,
 }, acandy_mt)
 

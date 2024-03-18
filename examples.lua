@@ -108,57 +108,7 @@ print(example3)
 --> <br id="example3">
 
 
--- 4. acandy.from_yields - derive a Fragment from a generator function
-----------------------------------------------------------------------
-
-local height_weights = {
-	{ name = "Alice", height = 160, weight = 50 },
-	{ name = "Bob"  , height = 180, weight = 70 },
-	{ name = "Carol", height = 170, weight = 60 },
-}
-
-local example4 = a.table {
-	a.tr {
-		a.th "Name", a.th "Height", a.th "Weight",
-	},
-	a.from_yields ^ function(yield)
-		for _, item in ipairs(height_weights) do
-			yield(a.tr {
-				a.td(item.name),
-				a.td(item.height.." cm"),
-				a.td(item.weight.." kg"),
-			})
-		end
-	end,  -- or `a.from_yields(function(yield) ... end)`
-}
-print(example4)
---[[ Output (formated):
-<table>
-	<tr>
-		<th>Name</th>
-		<th>Height</th>
-		<th>Weight</th>
-	</tr>
-	<tr>
-		<td>Alice</td>
-		<td>160 cm</td>
-		<td>50 kg</td>
-	</tr>
-	<tr>
-		<td>Bob</td>
-		<td>180 cm</td>
-		<td>70 kg</td>
-	</tr>
-	<tr>
-		<td>Carol</td>
-		<td>170 cm</td>
-		<td>60 kg</td>
-	</tr>
-</table>
-]]
-
-
--- 5. Shorthand attributes
+-- 4. Shorthand attributes
 --------------------------
 
 local example5 = a.div["#my-div cls1 cls2"] {
@@ -168,7 +118,7 @@ print(example5)
 --> <div id="my-div" class="cls1 cls2"><p>You know what it is.</p></div>
 
 
--- 6. Element chains
+-- 5. Element chains
 --------------------
 
 local template_attrs = { class="foo", style="color: green;" }
@@ -192,7 +142,7 @@ print(example6)
 
 
 
--- 7. acandy.some - Construct multiple elements
+-- 6. acandy.some - Construct multiple elements
 -----------------------------------------------
 
 --[[
@@ -230,7 +180,7 @@ print(example7)
 ]]
 
 
--- 8. Raw strings
+-- 7. Raw strings
 -----------------
 
 local example8_a = a.ul {
