@@ -245,7 +245,7 @@ local example = a.main {
 }
 ```
 
-前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)（如 `<br>`）或[已构建元素](#operate-elements--操作元素)。
+前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)（如 `<br>`）或[已构建元素](#element-instance-properties--元素实例属性)。
 
 ```lua
 local li_link = a.li / a.a
@@ -372,7 +372,7 @@ print(items)
 </ul>
 ```
 
-## Operate elements | 操作元素
+## Element instance properties | 元素实例属性
 
 如果一个元素是 `a.div(...)`、`a.div[...](...)` 这类进行函数调用得出的元素，则称它为“已构建元素”；已构建元素作为元素链末端的元素时，该元素链同样返回一个已构建元素；而 `a.div`、`a.div[...]` 则不属于已构建元素。
 
