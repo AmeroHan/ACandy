@@ -22,9 +22,7 @@ local example = a.Fragment {
    a.h1["#top heading heading-1"] "Hello!",
    a.div { class="container", style="margin: 0 auto;",
       a.p {
-         "My name is ",
-         a.dfn "ACandy",
-         ", a module for building HTML.",
+         "My name is ", a.dfn("ACandy"), ", a module for building HTML.",
          a.br,
          "Thank you for your visit.",
       },
@@ -54,7 +52,7 @@ Output (formatted): | 输出（经过格式化）：
 </div>
 ```
 
-## 导入
+## Import | 导入
 
 ```lua
 local a = require("acandy")
@@ -68,7 +66,7 @@ local a = require("acandy")
 
 下文的 `a` 均指代本模块。
 
-## Elements | 元素
+## Create elements | 创建元素
 
 一个基本的例子如下：
 
@@ -80,7 +78,7 @@ local elem = a.p {
 print(elem)
 ```
 
-表的键值对和序列分别表示元素的属性和子元素，正如 `a.p` 那样。若仅有一个子元素且不需要设置属性，可以直接将该元素作为函数参数，所以 `a.code("...")` 和 `a.code({ "..." })` 是等价的。
+表的键值对和序列分别表示元素的属性和子结点，正如 `a.p` 那样。若仅有一个子结点且不需要设置属性，可以直接将该结点作为函数参数，所以 `a.code("...")` 和 `a.code({ "..." })` 是等价的。
 
 该代码的输出，格式化后（下同）如下。
 
@@ -92,9 +90,11 @@ print(elem)
 
 > [!TIP]
 > - 你不需要在字符串中处理 HTML 转义。如果不期望自动的转义，可以将内容放在 [`a.Raw`](#acandyraw) 中。
-> - 子元素并不必须是元素或字符串——虽然这里只展示了这两类，一切能 `tostring` 的值均可作为子元素。
+> - 子结点并不必须是元素或字符串——虽然这里只展示了这两类，一切能 `tostring` 的值均可作为子结点。
 
-### 属性
+对于 HTML 元素，<code>a.*xxx*</code> 是不区分大小写的，因此 `a.div`、`a.Div`、`a.DIV`……是同一个值，它们都将变成`<div></div>`。而对于其他元素，<code>a.*xxx*</code> 是大小写敏感的。
+
+### Attributes | 属性
 
 通过表的键值对为元素提供属性。其中，键必须是[合法的 XML 字符串](https://www.w3.org/TR/xml/#NT-Name)（目前模块仅支持 ASCII 字符）；值可以是以下内容：
 
@@ -102,15 +102,15 @@ print(elem)
 - `true` 表示此为布尔值属性，例如，`a.script { async=true }` 表示 `<script async></script>`；
 - 其余值，将会对其进行 `tostring`，并转义其中的 `< > & "`。
 
-### 子元素
+### Children | 子结点
 
-通过表的序列部分为元素提供子元素。除 `nil` 之外的值均可作为子元素。
+通过表的序列部分为元素提供子结点。除 `nil` 之外的值均可作为子结点。
 
 #### 元素、字符串、数字、布尔值等后文没有提到的值
 
 在元素字符串化时，对这些值尝试 `tostring`，并转义其中的 `< > &`。如果不期望自动的转义，可以将内容放在 [`a.Raw`](#acandyraw) 中。
 
-在下面这个例子中，我们将三个元素（`<p>`）作为 `<article>` 的子元素，并分别将字符串、数字、布尔值作为 `<p>` 的元素。结果显而易见。
+在下面这个例子中，我们将三个元素（`<p>`）作为 `<article>` 的子结点，并分别将字符串、数字、布尔值作为 `<p>` 的元素。结果显而易见。
 
 ```lua
 local elem = a.article {
@@ -157,7 +157,7 @@ local elem = a.div {
 
 #### 函数
 
-可以将函数作为子元素，这相当于调用函数，并将返回值作为子元素，唯一的区别在于函数将被推迟到 `tostring` 时调用。
+可以将函数作为子结点，这相当于调用函数，并将返回值作为子结点，唯一的区别在于函数将被推迟到 `tostring` 时调用。
 
 ```lua
 local elem = a.ul {
@@ -193,7 +193,7 @@ print(elem)
 ```
 
 > [!TIP]
-> 子元素是递归处理的，所以你可以在函数里返回函数。
+> 子结点是递归处理的，所以你可以在函数里返回函数。
 
 ### 方括号语法（设置元素属性）
 
@@ -245,7 +245,7 @@ local example = a.main {
 }
 ```
 
-前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)（如 `<br>`）或构建好的元素。“构建好的元素”指 `a.div(...)`、`a.div[...](...)` 这类进行函数调用得出的元素，而 `a.div`、`a.div[...]` 则不是“构建好的元素”。
+前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)（如 `<br>`）或[已构建元素](#operate-elements--操作元素)。
 
 ```lua
 local li_link = a.li / a.a
@@ -312,8 +312,8 @@ print(frag)
 
 `a.Raw` 用于使字符串在最终不被转义。它接收任意类型的值，并调用 `tostring`，存储于内部。
 
-- 设置了 `__tostring`，可以得到对应字符串；
-- 设置了 `__concat`，可以连接两个由 `a.Raw` 得到的对象。
+- 设置了 `__tostring`，可以通过 `tostring` 得到对应字符串；
+- 设置了 `__concat`，可以通过 `..` 连接两个由 `a.Raw` 得到的对象。
 
 例子：
 
@@ -321,8 +321,8 @@ print(frag)
 local elem = a.ul {
    a.li "foo <br> bar",
    a.li(a.Raw "foo <br> bar"),
-   a.li(a.Raw("<span>foo")..a.Raw("bar</span>")),
-   a.li { a.Raw("<span>foo"), a.Raw("bar</span>") },
+   a.li(a.Raw("foo <b")..a.Raw("r> bar")),
+   a.li { a.Raw("foo <b"), a.Raw("r> bar") },
 }
 ```
 
@@ -330,16 +330,16 @@ local elem = a.ul {
 <ul>
    <li>foo &lt;br&gt; bar</li>
    <li>foo <br> bar</li>
-   <li><span>foobar</span></li>
-   <li><span>foobar</span></li>
+   <li>foo <br> bar</li>
+   <li>foo <br> bar</li>
 </ul>
 ```
 
 ### `acandy.some`
 
 ```lua
-local frag1 = a.some.<tag>(<arg1>, <arg2>, ..., <argN>)
-local frag2 = a.some.<tag>[<attr>](<arg1>, <arg2>, ..., <argN>)
+local frag1 = a.some.<tag>(<arg1>, <arg2>, ...)
+local frag2 = a.some.<tag>[<attr>](<arg1>, <arg2>, ...)
 ```
 
 相当于
@@ -349,13 +349,11 @@ local frag1 = a.Fragment {
    a.<tag>(<arg1>),
    a.<tag>(<arg2>),
    ...,
-   a.<tag>(<argN>),
 }
 local frag2 = a.Fragment {
    a.<tag>[<attr>](<arg1>),
    a.<tag>[<attr>](<arg2>),
    ...,
-   a.<tag>[<attr>](<argN>),
 }
 ```
 
@@ -372,6 +370,54 @@ print(items)
    <li class="my-li">item 1</li>
    <li class="my-li">item 2</li>
 </ul>
+```
+
+## Operate elements | 操作元素
+
+如果一个元素是 `a.div(...)`、`a.div[...](...)` 这类进行函数调用得出的元素，则称它为“已构建元素”；已构建元素作为元素链末端的元素时，该元素链同样返回一个已构建元素；而 `a.div`、`a.div[...]` 则不属于已构建元素。
+
+对于一个已构建的元素 `elem`，它有如下属性。
+
+- `elem.tag_name`：元素的标签名，可以重新赋值。
+- `elem.attributes`：一个表，存储着元素的所有属性，对此表的更改会生效于元素本身；不可重新赋值。
+- `elem.children`：一个 [Fragment](#acandyfragment)，存储着元素的所有子结点，对此表的更改会生效于元素本身；不可重新赋值。
+- <code>elem.*some_attribute*</code>（<code>*some_attribute*</code> 为字符串）：相当于 <code>elem.attributes.*some_attribute*</code>。
+- <code>elem[*n*]</code>（<code>*n*</code> 为整数）：相当于 <code>elem.children[*n*]</code>。
+
+例子：
+
+```lua
+local elem = a.ol { id="my-id",
+   a.li "item 1",
+}
+
+-- get
+elem.tag_name  --> "ol"
+
+elem.children[1]  --> a.li "item 1"
+elem[1] == elem.children[1]  --> true
+
+elem.attributes.id  --> "my-id"
+elem.id == elem.attributes.id  --> true
+
+-- set
+elem.tag_name = 'ul'
+
+elem.children:insert(a.li "item 2")
+elem[3] = a.li "item 3"
+
+elem.attributes.id = "new-id"
+elem.style = "color: blue;"
+
+print(elem)
+```
+
+```html
+<ul id="new-id" style="color: blue;">
+   <li>item 1</li>
+   <li>item 2</li>
+   <li>item 3</li>
+<ul>
 ```
 
 ## Contribution | 贡献
