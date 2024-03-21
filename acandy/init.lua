@@ -448,6 +448,8 @@ local function set_elem_prop(self, key, val)
 
 		-- 为tag_name赋值
 		self[SYM_TAG_NAME] = val
+	elseif key == 'children' or 'attributes' then
+		error('attempt to replace the '..key..' table of the element')
 	elseif type(key) == 'string' then
 		-- e.g. elem.class = 'content'
 		if not utils.is_valid_xml_name(key) then
