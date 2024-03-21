@@ -458,11 +458,7 @@ local function set_elem_prop(self, key, val)
 		self[SYM_ATTR_MAP][key] = val
 	elseif type(key) == 'number' then
 		-- e.g. elem[1] = 'Lorem ipsum dolor sit amet...'
-		if val == nil then
-			table.remove(self[SYM_CHILDREN], key)
-		else
-			self[SYM_CHILDREN][key] = val
-		end
+		self[SYM_CHILDREN][key] = val
 	else
 		error('Element键类型只能是string或number', 2)
 	end

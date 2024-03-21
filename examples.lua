@@ -95,13 +95,6 @@ example3[2] = a.li "Item 2"
 print(example3)
 --> <ol id="example3"><li>Item 1</li><li>Item 2</li></ol>
 
--- When deleting a child, siblings automatically shift.
-example3[1] = nil
-print(example3)
---> <ol id="example3"><li>Item 2</li></ol>
-print(example3[1])
---> <li>Item 2</li>
-
 -- Children will be removed when changed to a void element.
 example3.tag_name = "br"
 print(example3)
