@@ -271,7 +271,7 @@ describe('non-bare element', function ()
 		)
 	end)
 
-	it("doesn't convert strings in object", function ()
+	it("doesn't convert strings as object properties", function ()
 		local elem = a.div['< > & " &amp;'] '< > & " &amp;'
 		local _ = tostring(elem)
 		assert.are.equal(elem.class, '< > & " &amp;')
@@ -279,7 +279,7 @@ describe('non-bare element', function ()
 	end)
 end)
 
-describe('`a.style` and `a.script`', function ()
+describe('`a.style` or `a.script`', function ()
 	it("doesn't encode any character in text child", function ()
 		assert.are.equal(
 			tostring(a.style('< > & " &amp;')),
@@ -289,5 +289,10 @@ describe('`a.style` and `a.script`', function ()
 			tostring(a.script('< > & " &amp;')),
 			'<script>< > & " &amp;</script>'
 		)
+	end)
+
+	it("doesn't check end tag", function ()
+		assert.are.equal(tostring(a.style('</style>')), '<style></style></style>')
+		assert.are.equal(tostring(a.script('</script>')), '<script></script></script>')
 	end)
 end)
