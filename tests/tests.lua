@@ -110,9 +110,22 @@ describe('building element', function ()
 			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
 		))
 		assert.is_true(match_html(
+			tostring(div['my-class#my-id']),
+			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
+		))
+		assert.is_true(match_html(
 			tostring(div[' my-class \n #my-id ']),
 			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
 		))
+	end)
+
+	it('raises an error when multiple id provided', function ()
+		assert.has.error(function ()
+			local never = div['#id1#id2']
+		end)
+		assert.has.error(function ()
+			local never = div['#id1 #id2']
+		end)
 	end)
 
 	it('can be gotten by indexing a base element with table', function ()
@@ -231,5 +244,50 @@ describe('built element', function ()
 				<li>item 3</li>
 			</ul>
 		]]))
+	end)
+end)
+
+
+describe('non-bare element', function ()
+	it('convert `< > & "` in attributes of HTML into entities', function ()
+		assert.are.equal(
+			tostring(a.div['< > & " &amp;']),
+			'<div class="&lt; &gt; &amp; &quot; &amp;amp;"></div>'
+		)
+		assert.are.equal(
+			tostring(a.div[{ class='< > & " &amp;' }]),
+			'<div class="&lt; &gt; &amp; &quot; &amp;amp;"></div>'
+		)
+		assert.are.equal(
+			tostring(a.div { class='< > & " &amp;' }),
+			'<div class="&lt; &gt; &amp; &quot; &amp;amp;"></div>'
+		)
+	end)
+
+	it('only convert `< > &` in text of HTML into entities', function ()
+		assert.are.equal(
+			tostring(a.div('< > & " &amp;')),
+			'<div>&lt; &gt; &amp; " &amp;amp;</div>'
+		)
+	end)
+
+	it("doesn't convert strings in object", function ()
+		local elem = a.div['< > & " &amp;'] '< > & " &amp;'
+		local _ = tostring(elem)
+		assert.are.equal(elem.class, '< > & " &amp;')
+		assert.are.equal(elem[1], '< > & " &amp;')
+	end)
+end)
+
+describe('`a.style` and `a.script`', function ()
+	it("doesn't encode any character in text child", function ()
+		assert.are.equal(
+			tostring(a.style('< > & " &amp;')),
+			'<style>< > & " &amp;</style>'
+		)
+		assert.are.equal(
+			tostring(a.script('< > & " &amp;')),
+			'<script>< > & " &amp;</script>'
+		)
 	end)
 end)
