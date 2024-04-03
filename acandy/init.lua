@@ -345,7 +345,8 @@ local function get_elem_prop(self, key)
 	if key == 'tag_name' then
 		return self[SYM_TAG_NAME]
 	elseif key == 'children' then
-		return setmt(self[SYM_CHILDREN], Fragment_mt)
+		local children = rawget(self, SYM_CHILDREN)
+		return children and setmt(children, Fragment_mt)
 	elseif key == 'attributes' then
 		return self[SYM_ATTR_MAP]
 	elseif type(key) == 'string' then
@@ -353,7 +354,8 @@ local function get_elem_prop(self, key)
 		return self[SYM_ATTR_MAP][key]
 	elseif type(key) == 'number' then
 		-- e.g. `elem[1]`
-		return self[SYM_CHILDREN][key]
+		local children = rawget(self, SYM_CHILDREN)
+		return children and children[key]  -- no error for ipairs
 	end
 
 	error("element property key type is neither 'string' nor 'number'", 2)
@@ -449,7 +451,11 @@ local function set_elem_prop(self, key, val)
 		self[SYM_ATTR_MAP][key] = val
 	elseif type(key) == 'number' then
 		-- e.g. elem[1] = 'Lorem ipsum dolor sit amet...'
-		self[SYM_CHILDREN][key] = val
+		local children = rawget(self, SYM_CHILDREN)
+		if not children then
+			error('attempt to assign child on a void element', 2)
+		end
+		children[key] = val
 	else
 		error('Element键类型只能是string或number', 2)
 	end
