@@ -1,4 +1,4 @@
-local a = require("acandy")
+local a = require('acandy')
 
 
 -- TODO: test cases
@@ -10,20 +10,20 @@ local a = require("acandy")
 local example1 = (
 	a.Fragment {
 		-- String is accepted as argument.
-		a.h2 "Hello!",
+		a.h2 'Hello!',
 		-- Table is accepted as argument.
 		-- Map part represents attributes, array part represents children.
 		a.div { id="container", class="container",
 			a.p {
-				"There is ", a.strong "an example of strong", ".",
+				'There is ', a.strong 'an example of strong', '.',
 				a.br,  -- Putting a constructer without calling is allowed.
-				"This is the second line.",
+				'This is the second line.',
 			},
 			a.ul {
 				-- Function is also allowed, which may return an element,
 				-- an array, a string, etc.
 				function ()
-					local names = { "Alice", "Bob", "Carol" }
+					local names = { 'Alice', 'Bob', 'Carol' }
 					local out = {}
 					for _, name in ipairs(names) do
 						table.insert(out, a.li(name))
@@ -65,8 +65,8 @@ local Card = function(props)
 end
 
 local example2 = Card { avater="https://example.com/", name="amero",
-	a.p "Custom component example.",
-	a.p "Use Fragment to receive children from props.",
+	a.p 'Custom component example.',
+	a.p 'Use Fragment to receive children from props.',
 }
 
 print(example2)
@@ -88,15 +88,15 @@ print(example3)
 --> <div></div>
 
 -- Set tag_name, attributes and children.
-example3.tag_name = "ol"
-example3.id = "example3"
-example3[1] = a.li "Item 1"
-example3[2] = a.li "Item 2"
+example3.tag_name = 'ol'
+example3.id = 'example3'
+example3[1] = a.li 'Item 1'
+example3[2] = a.li 'Item 2'
 print(example3)
 --> <ol id="example3"><li>Item 1</li><li>Item 2</li></ol>
 
 -- Children will be removed when changed to a void element.
-example3.tag_name = "br"
+example3.tag_name = 'br'
 print(example3)
 --> <br id="example3">
 
@@ -104,8 +104,8 @@ print(example3)
 -- 4. Shorthand attributes
 --------------------------
 
-local example5 = a.div["#my-div cls1 cls2"] {
-	a.p "You know what it is.",
+local example5 = a.div['#my-div cls1 cls2'] {
+	a.p 'You know what it is.',
 }
 print(example5)
 --> <div id="my-div" class="cls1 cls2"><p>You know what it is.</p></div>
@@ -115,10 +115,10 @@ print(example5)
 --------------------
 
 local template_attrs = { class="foo", style="color: green;" }
-local example6 = a.header["site-header"] / a.nav / a.ul {
-	a.li["foo"] / a.a { href="/home", "Home" },
-	a.li[template_attrs] / a.a { href="/posts", "Posts" },
-	a.li / a.a { href="/about", "About" },
+local example6 = a.header['site-header'] / a.nav / a.ul {
+	a.li['foo'] / a.a { href="/home", 'Home' },
+	a.li[template_attrs] / a.a { href="/posts", 'Posts' },
+	a.li / a.a { href="/about", 'About' },
 }
 print(example6)
 --[[ Output (formated):
@@ -153,8 +153,8 @@ a.Fragment {
 ]]
 local some = a.some
 local example7 = a.table {
-	a.tr / some.th["foo"]("One", "Two", "Three"),
-	a.tr / some.td("A", "B", "C"),
+	a.tr / some.th['foo']('One', 'Two', 'Three'),
+	a.tr / some.td('A', 'B', 'C'),
 }
 print(example7)
 --[[ Output (formated):
@@ -177,8 +177,8 @@ print(example7)
 -----------------
 
 local example8_a = a.ul {
-	a.li "Encoded: <br>",
-	a.li / a.Raw("Remain: <br>"),
+	a.li 'Encoded: <br>',
+	a.li / a.Raw('Remain: <br>'),
 }
 print(example8_a)
 --[[ Output (formated):
@@ -188,5 +188,5 @@ print(example8_a)
 </ul>
 ]]
 
-local example8_b = a.div(a.Raw("<span>")..a.Raw("</span>"))
+local example8_b = a.div(a.Raw('<span>')..a.Raw('</span>'))
 print(example8_b)  --> <div><span></span></div>

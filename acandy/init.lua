@@ -23,7 +23,7 @@ local rawset = rawset
 local tostring = tostring
 
 local utils = require('acandy.utils')
-local VOID_ELEMS, HTML_ELEMS, NO_ENCODE_ELEMS = (function()
+local VOID_ELEMS, HTML_ELEMS, NO_ENCODE_ELEMS = (function ()
 	local config = require('acandy.elem_config')
 	return config.VOID_ELEMS, config.HTML_ELEMS, config.NO_ENCODE_ELEMS
 end)()
@@ -59,7 +59,7 @@ Raw_mt = {
 		end
 		return setmt({[SYM_STRING] = left[SYM_STRING]..right[SYM_STRING]}, Raw_mt)
 	end,
-	__newindex = function()
+	__newindex = function ()
 		error('Raw object is not mutable', 2)
 	end,
 }
@@ -614,11 +614,11 @@ end
 
 
 local function error_wrong_index()
-	error("attempt to access properties of a unbuilt element", 2)
+	error('attempt to access properties of a unbuilt element', 2)
 end
 
 local function error_wrong_newindex()
-	error("attempt to assign properties of a unbuilt element", 2)
+	error('attempt to assign properties of a unbuilt element', 2)
 end
 
 
@@ -640,7 +640,7 @@ BuiltElement_mt = {
 	__tostring = elem_to_string,  --> string
 	__index = get_elem_prop,
 	__newindex = set_elem_prop,
-	__div = function()
+	__div = function ()
 		error('attempt to perform division on a built element', 2)
 	end
 }

@@ -19,7 +19,7 @@ local a = require 'acandy'
 local some = a.some
 
 local example = a.Fragment {
-   a.h1["#top heading heading-1"] 'Hello!',
+   a.h1['#top heading heading-1'] 'Hello!',
    a.div { class="container", style="margin: 0 auto;",
       a.p {
          'My name is ', a.dfn('ACandy'), ', a module for building HTML.',
@@ -163,14 +163,14 @@ print(elem)
 local elem = a.ul {
    a.li 'item 1',
    a.li {
-      function()  -- function returning string
+      function ()  -- function returning string
          return 'item 2'
       end,
    }
-   function()  -- function returning element
+   function ()  -- function returning element
       return a.li 'item 3'
    end,
-   function()  -- function returning sequence
+   function ()  -- function returning sequence
       local list = {}
       for i = 4, 6 do
          list[#list+1] = a.li('item '..i)
@@ -200,7 +200,7 @@ print(elem)
 在方括号内放置字符串可以快速设置 `id` 和 `class`。
 
 ```lua
-local elem = a.div["#my-id my-class-1 my-class-2"] {
+local elem = a.div['#my-id my-class-1 my-class-2'] {
    a.p 'You know what it is.',
 }
 print(elem)
@@ -250,7 +250,7 @@ local example = a.main {
 ```lua
 local li_link = a.li / a.a
 local elem = (
-   a.header["site-header"] / a.nav / a.ul {
+   a.header['site-header'] / a.nav / a.ul {
       li_link { href="/home", 'Home' },
       li_link { href="/posts", 'Posts' },
       li_link { href="/about", 'About' },
@@ -361,7 +361,7 @@ local frag2 = a.Fragment {
 
 ```lua
 local some = a.some
-local items = a.ul(some.li["my-li"]('item 1', 'item 2'), some.li('item 3', 'item 4'))
+local items = a.ul(some.li['my-li']('item 1', 'item 2'), some.li('item 3', 'item 4'))
 print(items)
 ```
 
@@ -399,7 +399,7 @@ elem.tag_name  --> 'ol'
 elem.children[1]  --> a.li 'item 1'
 elem[1] == elem.children[1]  --> true
 
-elem.attributes.id  --> "my-id"
+elem.attributes.id  --> 'my-id'
 elem.id == elem.attributes.id  --> true
 
 -- set
@@ -408,8 +408,8 @@ elem.tag_name = 'ul'
 elem.children:insert(a.li 'item 2')
 elem[3] = a.li 'item 3'
 
-elem.attributes.id = "new-id"
-elem.style = "color: blue;"
+elem.attributes.id = 'new-id'
+elem.style = 'color: blue;'
 
 print(elem)
 ```
@@ -422,7 +422,7 @@ print(elem)
 </ul>
 ```
 
-## Contribution | 贡献
+## Contribute | 贡献
 
 Contributions of any form are welcomed, including bug reports, feature suggestions, documentation improvement, code optimization and so on!
 
