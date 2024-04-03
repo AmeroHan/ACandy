@@ -163,7 +163,7 @@ end
 ### BareElement
 
 A BareElement is an Element without any properties except tag name, e.g.
-`acandy.div`. It is unmutable and can be cached and reused.
+`acandy.div`. It is immutable and can be cached and reused.
 
 Indexing a BareElement would return a BuildingElement, and calling it would
 return a BuiltElement. Both methods would not change the element itself.
@@ -188,15 +188,6 @@ local building_div = acandy.div['#id cls1 cls2']
 
 Similar to BareElements, a BuildingElement can be called to get a
 BuiltElement with properties set.
-
-Setting properties of a BareElement would result in the element being
-converted to BuiltElement.
-
-```lua
-local my_div = acandy.div['#id cls1 cls2']  -- BuildingElement
-my_div.id = "new-id"
--- now `my_div` becomes a BuiltElement
-```
 ]]
 
 ---@class BuiltElement
