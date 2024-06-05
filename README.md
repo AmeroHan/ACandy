@@ -361,7 +361,10 @@ local frag2 = a.Fragment {
 
 ```lua
 local some = a.some
-local items = a.ul(some.li['my-li']('item 1', 'item 2'), some.li('item 3', 'item 4'))
+local items = a.ul {
+   some.li['my-li']('item 1', 'item 2'),
+   some.li('item 3', 'item 4'),
+}
 print(items)
 ```
 
