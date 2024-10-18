@@ -661,9 +661,7 @@ ElementChain_mt = {
 }
 
 
-local acandy
---- Metatable used by this module.
-local acandy_mt = {  ---@type metatable
+local a = setmt({}, {
 	--- When indexing a uncached tag name, return a constructor of that element.
 	---@param key string
 	---@return BareElement
@@ -686,12 +684,12 @@ local acandy_mt = {  ---@type metatable
 		self[key] = bare_elem
 		return bare_elem
 	end,
-}
+})
 
 
 local some = setmt({}, {
 	__index = function (_, key)
-		local bare_elem = acandy[key]
+		local bare_elem = a[key]
 		local mt = {}
 
 		function mt:__index(shorthand)
@@ -710,10 +708,9 @@ local some = setmt({}, {
 })
 
 
-acandy = setmt({
+return {
+	a = a,
+	some = some,
 	Fragment = Fragment,
 	Raw = Raw,
-	some = some,
-}, acandy_mt)
-
-return acandy
+}

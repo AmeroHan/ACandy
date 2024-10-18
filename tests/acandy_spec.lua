@@ -1,13 +1,14 @@
 ---@diagnostic disable: undefined-field
 
 local utils = require('tests.utils')
-local a = require('acandy')
+local acandy = require('acandy')
+local a, some, Fragment = acandy.a, acandy.some, acandy.Fragment
 local match_html = utils.match_html
 
 
 describe('overall test', function ()
 	it('should succeed', function ()
-		local f = a.Fragment {
+		local f = Fragment {
 			a.h1['#top heading heading-1'] 'Hello!',
 			a.div {class = "container", style = "margin: 0 auto;",
 				a.p {
@@ -16,7 +17,7 @@ describe('overall test', function ()
 					'Thank you for your visit.',
 				},
 				a.p 'visitors:',
-				a.ul / a.some.li('Alice', 'Bob', 'Carol', '...'),
+				a.ul / some.li('Alice', 'Bob', 'Carol', '...'),
 			},
 		}
 		assert.is_true(match_html(tostring(f), [[

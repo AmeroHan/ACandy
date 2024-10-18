@@ -10,10 +10,10 @@ ACandy 是一个构建 HTML 的 Lua 模块。利用 Lua 的语法糖和元表，
 ## Take a peek | 瞄一瞄
 
 ```lua
-local a = require 'acandy'
-local some = a.some
+local acandy = require 'acandy'
+local a, some, Fragment = acandy.a, acandy.some, acandy.Fragment
 
-local example = a.Fragment {
+local example = Fragment {
    a.h1['#top heading heading-1'] 'Hello!',
    a.div { class="container", style="margin: 0 auto;",
       a.p {
@@ -53,11 +53,12 @@ In this documentation, strings related to attributes are enclosed in double quot
 ## Import | 导入
 
 ```lua
-local a = require('acandy')
+local acandy = require('acandy')
+local a = acandy.a
 ```
 
-Using `a` as ACandy’s identifier is suggested, because:   
-建议使用 `a` 来命名 ACandy，这是因为：
+`a` is the entry point for all elements, because:  
+`a` 是所有元素的入口，这是因为：
 
 - `a` is ACandy’s first letter;  
   `a` 是 ACandy 的首字母；
@@ -65,9 +66,6 @@ Using `a` as ACandy’s identifier is suggested, because:
   `a` 很短，打起来方便；
 - <code>a.*xxx*</code> can be understood as “a *xxx*” in English.  
   <code>a.*xxx*</code> 可以理解为英语的“一个 *xxx*”。
-
-In the following context, `a` refers to this module.  
-下文的 `a` 均指代本模块。
 
 ## Create elements | 创建元素
 
@@ -92,8 +90,8 @@ The output of this code, formatted (the same below), is as follows.
 ```
 
 > [!TIP]
-> - You don’t need to handle HTML escaping in strings. If you don't want automatic escaping, you can put the content in [`a.Raw`](#acandyraw).  
->   你不需要在字符串中处理 HTML 转义。如果不期望自动的转义，可以将内容放在 [`a.Raw`](#acandyraw) 中。
+> - You don’t need to handle HTML escaping in strings. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).  
+>   你不需要在字符串中处理 HTML 转义。如果不期望自动的转义，可以将内容放在 [`acandy.Raw`](#acandyraw) 中。
 > - Child nodes do not have to be elements or strings—although only these two types are shown here, any value that can be `tostring` is capable of a child node.
 >   子结点并不必须是元素或字符串——虽然这里只展示了这两类，一切能 `tostring` 的值均可作为子结点。
 
@@ -119,10 +117,10 @@ Child nodes are provided to elements through the sequence part of the table. Any
 
 #### Elements, strings, numbers, booleans, and other values not mentioned later | 元素、字符串、数字、布尔值等后文没有提到的值
 
-When the element is stringified, these values will be attempted to `tostring` and escape `< > &`. If you don't want automatic escaping, you can put the content in [`a.Raw`](#acandyraw).  
-在元素字符串化时，对这些值尝试 `tostring`，并转义其中的 `< > &`。如果不期望自动的转义，可以将内容放在 [`a.Raw`](#acandyraw) 中。
+When the element is stringified, these values will be attempted to `tostring` and escape `< > &`. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).  
+在元素字符串化时，对这些值尝试 `tostring`，并转义其中的 `< > &`。如果不期望自动的转义，可以将内容放在 [`acandy.Raw`](#acandyraw) 中。
 
-In the following example, we use three elements (`<p>`) as child nodes of `<article>`, and use strings, numbers, and booleans as elements of `<p>`. The result is obvious.  
+In the following example, we use three elements (`<p>`) as child nodes of `<article>`, and use strings, numbers, and booleans as elements of `<p>`. It is trivial to guess the result.  
 在下面这个例子中，我们将三个元素（`<p>`）作为 `<article>` 的子结点，并分别将字符串、数字、布尔值作为 `<p>` 的元素。结果显而易见。
 
 ```lua
@@ -151,8 +149,8 @@ The following tables are treated as sequences:
 以下表将被视为序列：
 - Tables without metatables, e.g., `{ 1, 2, 3 }`;  
   未设置元表的表，如 `{ 1, 2, 3 }`；
-- Tables returned by [`a.Fragment`](#acandyfragment), e.g., `a.Fragment { 1, 2, 3 }`;  
-  由 [`a.Fragment`](#acandyfragment) 返回的表，如 `a.Fragment { 1, 2, 3 }`；
+- Tables returned by [`acandy.Fragment`](#acandyfragment), e.g., `Fragment { 1, 2, 3 }`;  
+  由 [`acandy.Fragment`](#acandyfragment) 返回的表，如 `Fragment { 1, 2, 3 }`；
 - Tables with the `'__acandy_fragment_like'` field in the metatable set to `true`, i.e., you can make <code>*val*</code> be treated as a sequence when stringified by setting <code>getmetatable(*val*).__acandy_fragment_like = true</code>.  
   元表的 `'__acandy_fragment_like'` 字段为 `true` 的表，即，可通过 <code>getmetatable(*val*).__acandy_fragment_like = true</code> 使 <code>*val*</code> 在字符串化时被视作序列。
 
@@ -272,12 +270,12 @@ The premise is that `elem1`, `elem2` are not [void elements](https://developer.m
 前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)（如 `<br>`）或[已构建元素](#element-instance-properties--元素实例属性)。
 
 ```lua
-local li_link = a.li / a.a
+local link_item = a.li / a.a
 local elem = (
    a.header['site-header'] / a.nav / a.ul {
-      li_link { href="/home", 'Home' },
-      li_link { href="/posts", 'Posts' },
-      li_link { href="/about", 'About' },
+      link_item { href="/home", 'Home' },
+      link_item { href="/posts", 'Posts' },
+      link_item { href="/about", 'About' },
    }
 )
 print(elem)
@@ -302,29 +300,30 @@ print(elem)
 ```
 
 > [!TIP]
-> breadcrumbs can be cached, just like `li_link` in the above example.  
-> 元素链可以缓存，就像上面这个例子中的 `li_link`。
+> breadcrumbs can be cached, just like `link_item` in the above example.  
+> 元素链可以缓存，就像上面这个例子中的 `link_item`。
 
 ### `acandy.Fragment`
 
-Fragment holds multiple elements. The only differences between `a.Fragment` and a regular table are:  
-Fragment 承载多个元素。`a.Fragment` 和普通表的仅有的区别就是：
+`Fragment` holds multiple elements. The only differences between `Fragment` and a regular table are:  
+`Fragment` 承载多个元素。`Fragment` 和普通表的仅有的区别就是：
 
 - It has `__tostring` set, so you can get the HTML string;  
   设置了 `__tostring`，可以得到 HTML 字符串；
 - It has `__index` set, so you can call all methods in the `table` library which take a table as the first parameter (e.g., `table.insert`, `table.remove`) in an object-oriented manner.  
   设置了 `__index`，可以以类似面向对象的形式调用 `table.insert`、`table.remove` 等 `table` 库中所有以表为第一个参数的方法。
 
-You can create an empty Fragment with `a.Fragment()` or `a.Fragment({})`.  
-可以通过 `a.Fragment()` 或 `a.Fragment({})` 创建一个空的 Fragment。
+You can create an empty Fragment with `Fragment()` or `Fragment({})`.  
+可以通过 `Fragment()` 或 `Fragment({})` 创建一个空的 Fragment。
 
-When there is only one element, `a.Fragment(<child>)` is equivalent to `a.Fragment({ <child> })`.  
-当仅有一个元素时，`a.Fragment(<child>)` 与 `a.Fragment({ <child> })` 等价。
+When there is only one element, `Fragment(<child>)` is equivalent to `Fragment({ <child> })`.  
+当仅有一个元素时，`Fragment(<child>)` 与 `Fragment({ <child> })` 等价。
 
 Example: | 例子：
 
 ```lua
-local frag = a.Fragment {
+local Fragment = acandy.Fragment
+local frag = Fragment {
    a.p 'First paragraph.',
    a.p 'Second paragraph.',
 }
@@ -340,22 +339,23 @@ print(frag)
 
 ### `acandy.Raw`
 
-`a.Raw` prevents strings from being escaped in the final output. It accepts any type of value, calls `tostring`, and stores it internally.  
-`a.Raw` 用于使字符串在最终不被转义。它接收任意类型的值，并调用 `tostring`，存储于内部。
+`Raw` prevents strings from being escaped in the final output. It accepts any type of value, calls `tostring`, and stores it internally.  
+`Raw` 用于使字符串在最终不被转义。它接收任意类型的值，并调用 `tostring`，存储于内部。
 
 - It has `__tostring` set, so you can get the corresponding string with `tostring`;  
   设置了 `__tostring`，可以通过 `tostring` 得到对应字符串；
-- It has `__concat` set, so you can concatenate two objects obtained by `a.Raw` with `..`.  
-  设置了 `__concat`，可以通过 `..` 连接两个由 `a.Raw` 得到的对象。
+- It has `__concat` set, so you can concatenate two objects obtained by `Raw` with `..`.  
+  设置了 `__concat`，可以通过 `..` 连接两个由 `Raw` 得到的对象。
 
 Example: | 例子：
 
 ```lua
+local Raw = acandy.Raw
 local elem = a.ul {
    a.li 'foo <br> bar',
-   a.li(a.Raw 'foo <br> bar'),
-   a.li(a.Raw('foo <b')..a.Raw('r> bar')),
-   a.li { a.Raw('foo <b'), a.Raw('r> bar') },
+   a.li(Raw 'foo <br> bar'),
+   a.li(Raw('foo <b')..Raw('r> bar')),
+   a.li { Raw('foo <b'), Raw('r> bar') },
 }
 ```
 
@@ -371,20 +371,20 @@ local elem = a.ul {
 ### `acandy.some`
 
 ```lua
-local frag1 = a.some.<tag>(<arg1>, <arg2>, ...)
-local frag2 = a.some.<tag>[<attr>](<arg1>, <arg2>, ...)
+local frag1 = some.<tag>(<arg1>, <arg2>, ...)
+local frag2 = some.<tag>[<attr>](<arg1>, <arg2>, ...)
 ```
 
 is equivalent to:  
 相当于：
 
 ```lua
-local frag1 = a.Fragment {
+local frag1 = Fragment {
    a.<tag>(<arg1>),
    a.<tag>(<arg2>),
    ...,
 }
-local frag2 = a.Fragment {
+local frag2 = Fragment {
    a.<tag>[<attr>](<arg1>),
    a.<tag>[<attr>](<arg2>),
    ...,
@@ -394,7 +394,7 @@ local frag2 = a.Fragment {
 Example: | 例子：
 
 ```lua
-local some = a.some
+local some = acandy.some
 local items = a.ul {
    some.li['my-li']('item 1', 'item 2'),
    some.li('item 3', 'item 4'),
