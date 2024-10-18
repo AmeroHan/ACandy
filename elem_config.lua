@@ -1,5 +1,6 @@
 local config = {}
 
+-- ref: https://html.spec.whatwg.org/multipage/syntax.html#elements-2
 
 config.HTML_ELEMS = {}  ---@type table<string, true>
 do
@@ -9,12 +10,12 @@ do
 		'canvas', 'caption', 'center', 'cite', 'code', 'col', 'colgroup',
 		'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'dir', 'div', 'dl', 'dt',
 		'em', 'embed',
-		'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame', 'frameset',
+		'fencedframe', 'fieldset', 'figcaption', 'figure', 'font', 'footer', 'form', 'frame', 'frameset',
 		'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html',
-		'i', 'iframe', 'image', 'img', 'input', 'ins',
+		'i', 'iframe', 'img', 'input', 'ins',
 		'kbd',
 		'label', 'legend', 'li', 'link',
-		'main', 'map', 'mark', 'marquee', 'menu', 'menuitem', 'meta', 'meter',
+		'main', 'map', 'mark', 'marquee', 'menu', 'meta', 'meter',
 		'nav', 'nobr', 'noembed', 'noframes', 'noscript',
 		'object', 'ol', 'optgroup', 'option', 'output',
 		'p', 'param', 'picture', 'plaintext', 'portal', 'pre', 'progress',
@@ -50,7 +51,7 @@ config.VOID_ELEMS = {
 	wbr = true,
 }
 
-config.NO_ENCODE_ELEMS = {
+config.RAW_TEXT_ELEMS = {
 	script = true, style = true,
 }
 

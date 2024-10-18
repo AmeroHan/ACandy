@@ -23,9 +23,9 @@ local rawset = rawset
 local tostring = tostring
 
 local utils = require('.utils')
-local VOID_ELEMS, HTML_ELEMS, NO_ENCODE_ELEMS = (function ()
+local VOID_ELEMS, HTML_ELEMS, RAW_TEXT_ELEMS = (function ()
 	local config = require('.elem_config')
-	return config.VOID_ELEMS, config.HTML_ELEMS, config.NO_ENCODE_ELEMS
+	return config.VOID_ELEMS, config.HTML_ELEMS, config.RAW_TEXT_ELEMS
 end)()
 
 
@@ -328,7 +328,7 @@ local function elem_to_string(self)
 	end
 
 	-- format children
-	extend_strings_with_fragment(result, self[SYM_CHILDREN], nil, NO_ENCODE_ELEMS[tag_name])
+	extend_strings_with_fragment(result, self[SYM_CHILDREN], nil, RAW_TEXT_ELEMS[tag_name])
 	-- format close tag
 	result[#result+1] = '</'
 	result[#result+1] = tag_name
