@@ -3,10 +3,9 @@ local utils = {}
 local pairs = pairs
 local ipairs = ipairs
 local s_gsub = string.gsub
-local s_match = string.match
 
 
---- Shallow copy a table.
+---Shallow copy a table.
 ---@param t table
 ---@return table
 function utils.shallow_copy(t)
@@ -17,7 +16,7 @@ function utils.shallow_copy(t)
 	return out
 end
 
---- Shallow copy a table's sequence part.
+---Shallow copy a table's sequence part.
 ---@param t table
 ---@return table
 function utils.shallow_icopy(t)
@@ -28,8 +27,7 @@ function utils.shallow_icopy(t)
 	return out
 end
 
-
---- Apply `func` to each element of `...` and return a table.
+---Apply `func` to each element of `...` and return a table.
 ---@param func function | table callable
 ---@vararg any
 ---@return any[]
@@ -41,47 +39,40 @@ function utils.map_varargs(func, ...)
 	return t
 end
 
-
 local ENTITY_ENCODE_MAP = {
 	['<'] = '&lt;',
 	['>'] = '&gt;',
 	['&'] = '&amp;',
-	['"'] = '&quot;'
+	['"'] = '&quot;',
 }
 
---- Replace `<`, `>`, `&` and `"` with entities.
+---Replace `<`, `>`, `&` and `"` with entities.
 ---@param str string | number
 ---@return string
 function utils.attr_encode(str)
 	return (s_gsub(str, '[<>&"]', ENTITY_ENCODE_MAP))
 end
 
-
---- Replace `<`, `>`, `&` with entities.
+---Replace `<`, `>`, `&` with entities.
 ---@param str string | number
 ---@return string
 function utils.html_encode(str)
 	return (s_gsub(str, '[<>&]', ENTITY_ENCODE_MAP))
 end
 
-
---- Retrun truthy value when `name` is a valid XML name, otherwise falsy value.
+---Retrun truthy value when `name` is a valid XML name, otherwise falsy value.
 ---@param name any
----@return string | boolean | nil
+---@return any
 function utils.is_valid_xml_name(name)
-	if type(name) ~= 'string' then
-		return false
-	end
-	return s_match(name, '^[:%a_][:%w_%-%.]*$')  -- https://www.w3.org/TR/xml/#NT-Name
+	return type(name) == 'string' and name:find('^[:%a_][:%w_%-%.]*$')  -- https://www.w3.org/TR/xml/#NT-Name
 end
-
 
 ---@param str string | number
 ---@return table
 function utils.parse_shorthand_attrs(str)
 	-- parse id
 	local id = nil
-	str = s_gsub(str, '#([^%s#]*)', function(s)
+	str = s_gsub(str, '#([^%s#]*)', function (s)
 		if s == '' then
 			error('empty id', 4)
 		end
@@ -100,6 +91,5 @@ function utils.parse_shorthand_attrs(str)
 		class = class ~= '' and class or nil,
 	}
 end
-
 
 return utils

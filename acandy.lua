@@ -40,16 +40,8 @@ local MTKEY_FRAG_LIKE = '__acandy_fragment_like'
 local MTKEY_PROPS_LIKE = '__acandy_props_like'
 
 
-local Raw_mt  ---@type metatable
-
---- Create a Raw object, which would not be encoded when converted to string.
----@param val any value to be converted to string by `tostring()`
----@return table
-local function Raw(val)
-	return setmt({[SYM_STRING] = tostring(val)}, Raw_mt)
-end
-
-Raw_mt = {
+local Raw_mt
+Raw_mt = {  ---@type metatable
 	__tostring = function (self)
 		return self[SYM_STRING]
 	end,
@@ -64,21 +56,21 @@ Raw_mt = {
 	end,
 }
 
+---Create a Raw object, which would not be encoded when converted to string.
+---@param val any value to be converted to string by `tostring()`
+---@return table
+local function Raw(val)
+	return setmt({[SYM_STRING] = tostring(val)}, Raw_mt)
+end
 
---[[
-## Fragment
-
-A Fragment is an array-like table with metatable `Fragment_mt`.
-]]
-
+---An array-like table with metatable `Fragment_mt`.
 ---@class Fragment: table
 
---- Metatable used by Fragment object.
+---Metatable used by Fragment object.
 ---@type metatable
 local Fragment_mt
 
-
---- Whether `t` can be treated as a Fragment.
+---Whether `t` can be treated as a Fragment.
 ---@param t table
 ---@return boolean
 local function is_table_fragment_like(t)
@@ -86,10 +78,9 @@ local function is_table_fragment_like(t)
 	return not mt or mt == Fragment_mt or mt[MTKEY_FRAG_LIKE] == true
 end
 
-
---- Append the serialized string of the Fragment to `strs`.
---- Use len to avoid calling `#strs` repeatedly. This improves performance by
---- ~1/3.
+---Append the serialized string of the Fragment to `strs`.
+---Use len to avoid calling `#strs` repeatedly. This improves performance by
+---~1/3.
 ---@param strs table
 ---@param frag table
 ---@param strs_len? integer number of `strs`, used to optimize performance.
@@ -118,21 +109,17 @@ local function extend_strings_with_fragment(strs, frag, strs_len, no_encode)
 	append_serialized(frag)
 end
 
-
---- Flat and concat the Fragment, retruns string.
----@param frag table
----@return string
-local function concat_fragment(frag)
-	if #frag == 0 then return '' end
-
-	local children = {}
-	extend_strings_with_fragment(children, frag, 0)
-	return concat(children)
-end
-
-
 Fragment_mt = {
-	__tostring = concat_fragment,
+	---Flat and concat the Fragment, retruns string.
+	---@param self Fragment
+	---@return string
+	__tostring = function (self)
+		if #self == 0 then return '' end
+
+		local children = {}
+		extend_strings_with_fragment(children, self, 0)
+		return concat(children)
+	end,
 	__index = {
 		concat = table.concat,
 		insert = table.insert,
@@ -146,8 +133,7 @@ Fragment_mt = {
 	},
 }
 
-
---- Constructor of Fragment.
+---Constructor of Fragment.
 ---@param children any?
 ---@return Fragment
 local function Fragment(children)
@@ -158,57 +144,46 @@ local function Fragment(children)
 end
 
 
+---A BareElement is an Element without any properties except tag name, e.g.,
+---`acandy.div`. It is immutable and can be cached and reused.
+---Indexing a BareElement would return a BuildingElement, and calling it would
+---return a BuiltElement. Both methods would not change the element itself.
+---
+---Example:
+---```lua
+---local bare_div = a.div
+---```
 ---@class BareElement
---[[
-### BareElement
 
-A BareElement is an Element without any properties except tag name, e.g.
-`acandy.div`. It is immutable and can be cached and reused.
-
-Indexing a BareElement would return a BuildingElement, and calling it would
-return a BuiltElement. Both methods would not change the element itself.
-
-```lua
-local bare_div = acandy.div
-```
-]]
-
+---A BuildingElement is an Element derived from attribute shorthand syntex. The
+---shorthand is a string of id and space-separated class names, and the syntex
+---is to index the BareElement with a shorthand string, i.e. to put it inside
+---the brackets followed after the tag name, e.g. `acandy.div['#id cls1 cls2']`.
+---
+---Example:
+---```lua
+---local building_div = a.div['#id cls1 cls2']
+---```
+---
+---Similar to BareElements, a BuildingElement can be called to get a
+---BuiltElement with properties set.
 ---@class BuildingElement
---[[
-### BuildingElement
 
-A BuildingElement is an Element derived from attribute shorthand syntex. The
-shorthand is a string of id and space-separated class names, and the syntex is
-to index the BareElement with a shorthand string, i.e. to put it inside the
-brackets followed after the tag name, e.g. `acandy.div['#id cls1 cls2']`.
-
-```lua
-local building_div = acandy.div['#id cls1 cls2']
-```
-
-Similar to BareElements, a BuildingElement can be called to get a
-BuiltElement with properties set.
-]]
-
+---A BuiltElement is an Element derived from a BareElement or a BuildingElement
+---by calling it, which would return the BuiltElement with properties set.
+---
+---```lua
+---local built_pre1 = a.pre {
+---	class = 'lang-lua';
+---	"print('Hello, ACandy!')",
+---}
+---
+---local built_pre2 = a.pre['lang-lua'] "print('Hello, ACandy!')"
+---```
+---
+---Although named "Built", it is still mutable. Its properties can be changed by
+---assigning.
 ---@class BuiltElement
---[[
-### BuiltElement
-
-A BuiltElement is an Element derived from a BareElement or a BuildingElement by
-calling it, which would return the BuiltElement with properties set.
-
-```lua
-local built_pre1 = acandy.pre {
-	class = 'lang-lua';
-	"print('Hello, ACandy!')",
-}
-
-local built_pre2 = acandy.pre['lang-lua'] "print('Hello, ACandy!')"
-```
-
-Although named "Built", it is still mutable. Its properties can be changed by
-assigning.
-]]
 
 ---@class Breadcrumb
 
@@ -310,7 +285,7 @@ local function bare_elem_to_string(self)
 end
 
 
---- Convert the object into HTML code.
+---Convert the object into HTML code.
 ---@param self BuildingElement | BuiltElement
 ---@return string
 local function elem_to_string(self)
@@ -338,7 +313,7 @@ local function elem_to_string(self)
 end
 
 
---- Return tag name, attribute or child node depending on the key.
+---Return tag name, attribute or child node depending on the key.
 ---@param self BuiltElement
 ---@param key string | number
 local function get_elem_prop(self, key)
@@ -414,7 +389,7 @@ local function new_built_elem_from_props(self, props_or_child)
 end
 
 
---- Assign to tag name, attribute or child node depending on the key.
+---Assign to tag name, attribute or child node depending on the key.
 ---@param self BuildingElement | BuiltElement
 ---@param key string | number
 ---@param val any
@@ -462,8 +437,8 @@ local function set_elem_prop(self, key, val)
 end
 
 
---- Sementic sugar for setting attributes.
---- e.g. `local elem = acandy.div['#id cls1 cls2']`
+---Sementic sugar for setting attributes.
+---e.g. `local elem = acandy.div['#id cls1 cls2']`
 ---@param self BareElement
 ---@param shorthand_attrs string | table
 ---@return BuildingElement
@@ -662,7 +637,7 @@ Breadcrumb_mt = {
 
 
 local a = setmt({}, {
-	--- When indexing a uncached tag name, return a constructor of that element.
+	---When indexing a uncached tag name, return a constructor of that element.
 	---@param key string
 	---@return BareElement
 	__index = function (self, key)
