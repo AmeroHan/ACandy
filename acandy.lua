@@ -210,7 +210,7 @@ Although named "Built", it is still mutable. Its properties can be changed by
 assigning.
 ]]
 
----@class ElementChain
+---@class Breadcrumb
 
 
 ---@param strs string[]
@@ -242,7 +242,7 @@ end
 local BareElement_mt  ---@type metatable
 local BuiltElement_mt  ---@type metatable
 local BuildingElement_mt  ---@type metatable
-local ElementChain_mt  ---@type metatable
+local Breadcrumb_mt  ---@type metatable
 
 
 ---@param tag_name string
@@ -293,13 +293,13 @@ end
 
 ---@param tag_names string[]
 ---@param attr_maps {[string]: string | number | boolean}[]
----@return ElementChain
-local function ElementChain(tag_names, attr_maps)
-	local elem_chain = {
+---@return Breadcrumb
+local function Breadcrumb(tag_names, attr_maps)
+	local breadcrumb = {
 		[SYM_TAG_NAME] = tag_names,
 		[SYM_ATTR_MAP] = attr_maps,
 	}
-	return setmt(elem_chain, ElementChain_mt)
+	return setmt(breadcrumb, Breadcrumb_mt)
 end
 
 
@@ -480,51 +480,51 @@ local function new_building_elem_by_shorthand_attrs(self, shorthand_attrs)
 end
 
 
----@param self ElementChain
----@return ElementChain
-local function copy_elem_chain(self)
-	local new_chain = {
+---@param self Breadcrumb
+---@return Breadcrumb
+local function copy_breadcrumb(self)
+	local new_breadcrumb = {
 		[SYM_TAG_NAME] = utils.shallow_icopy(self[SYM_TAG_NAME]),
 		[SYM_ATTR_MAP] = utils.shallow_icopy(self[SYM_ATTR_MAP]),
 	}
-	return setmt(new_chain, ElementChain_mt)
+	return setmt(new_breadcrumb, Breadcrumb_mt)
 end
 
 
----@param chain ElementChain
+---@param breadcrumb Breadcrumb
 ---@param tag_name string
 ---@param attr_map {[string]: string | number | boolean}?
-local function append_elem_to_elem_chain(chain, tag_name, attr_map)
-	local new_len = #chain[SYM_TAG_NAME] + 1
-	chain[SYM_TAG_NAME][new_len] = tag_name
-	chain[SYM_ATTR_MAP][new_len] = attr_map
+local function append_elem_to_breadcrumb(breadcrumb, tag_name, attr_map)
+	local new_len = #breadcrumb[SYM_TAG_NAME] + 1
+	breadcrumb[SYM_TAG_NAME][new_len] = tag_name
+	breadcrumb[SYM_ATTR_MAP][new_len] = attr_map
 end
 
 
----@param chain1 ElementChain
----@param chain2 ElementChain
----@return ElementChain
-local function connect_elem_chains(chain1, chain2)
+---@param breadcrumb1 Breadcrumb
+---@param breadcrumb2 Breadcrumb
+---@return Breadcrumb
+local function connect_breadcrumbs(breadcrumb1, breadcrumb2)
 	local new_tag_names = {}
 	local new_attr_maps = {}
-	local attr_maps_to_copy_from = chain1[SYM_ATTR_MAP]
-	for i, tag_name in ipairs(chain1[SYM_TAG_NAME]) do
+	local attr_maps_to_copy_from = breadcrumb1[SYM_ATTR_MAP]
+	for i, tag_name in ipairs(breadcrumb1[SYM_TAG_NAME]) do
 		new_tag_names[i] = tag_name
 		new_attr_maps[i] = attr_maps_to_copy_from[i]
 	end
 	local len = #new_tag_names
-	attr_maps_to_copy_from = chain2[SYM_ATTR_MAP]
-	for i, tag_name in ipairs(chain2[SYM_TAG_NAME]) do
+	attr_maps_to_copy_from = breadcrumb2[SYM_ATTR_MAP]
+	for i, tag_name in ipairs(breadcrumb2[SYM_TAG_NAME]) do
 		new_tag_names[len + i] = tag_name
 		new_attr_maps[len + i] = attr_maps_to_copy_from[i]
 	end
-	return ElementChain(new_tag_names, new_attr_maps)
+	return Breadcrumb(new_tag_names, new_attr_maps)
 end
 
 
----@param self ElementChain
+---@param self Breadcrumb
 ---@return string
-local function elem_chain_to_string(self)
+local function breadcrumb_to_string(self)
 	local tag_names = self[SYM_TAG_NAME]
 	local attr_maps = self[SYM_ATTR_MAP]
 	local result = {}
@@ -548,11 +548,11 @@ local function elem_chain_to_string(self)
 end
 
 
----@param chain ElementChain
+---@param breadcrumb Breadcrumb
 ---@return BuiltElement root_elem, BuiltElement leaf_elem
-local function elem_chain_to_built_elem(chain)
-	local tag_names = chain[SYM_TAG_NAME]
-	local attr_maps = chain[SYM_ATTR_MAP]
+local function breadcrumb_to_built_elem(breadcrumb)
+	local tag_names = breadcrumb[SYM_TAG_NAME]
+	local attr_maps = breadcrumb[SYM_ATTR_MAP]
 	local leaf_elem
 	local function f(i)
 		if tag_names[i + 1] then
@@ -565,10 +565,10 @@ local function elem_chain_to_built_elem(chain)
 end
 
 
----@param left ElementChain
+---@param left Breadcrumb
 ---@param right any
----@return ElementChain | BuiltElement
-local function elem_chain_div(left, right)
+---@return Breadcrumb | BuiltElement
+local function breadcrumb_div(left, right)
 	local right_mt = getmt(right)
 
 	if right_mt == BareElement_mt or right_mt == BuildingElement_mt then
@@ -576,19 +576,19 @@ local function elem_chain_div(left, right)
 		local right_attr_map = rawget(right, SYM_ATTR_MAP)
 
 		if VOID_ELEMS[right_tag_name] then
-			local root_elem, leaf_elem = elem_chain_to_built_elem(left)
+			local root_elem, leaf_elem = breadcrumb_to_built_elem(left)
 			leaf_elem[SYM_CHILDREN][1] = BuiltElement(right_tag_name, right_attr_map or {})
 			return root_elem
 		end
 
-		local new_chain = copy_elem_chain(left)
-		append_elem_to_elem_chain(new_chain, right_tag_name, right_attr_map)
-		return new_chain
-	elseif right_mt == ElementChain_mt then
-		return connect_elem_chains(left, right)
+		local new_breadcrumb = copy_breadcrumb(left)
+		append_elem_to_breadcrumb(new_breadcrumb, right_tag_name, right_attr_map)
+		return new_breadcrumb
+	elseif right_mt == Breadcrumb_mt then
+		return connect_breadcrumbs(left, right)
 	end
 
-	local root_elem, leaf_elem = elem_chain_to_built_elem(left)
+	local root_elem, leaf_elem = breadcrumb_to_built_elem(left)
 	leaf_elem[SYM_CHILDREN][1] = right
 	return root_elem
 end
@@ -596,7 +596,7 @@ end
 
 ---@param left BareElement | BuildingElement | any
 ---@param right any | BareElement | BuildingElement
----@return ElementChain | BuiltElement
+---@return Breadcrumb | BuiltElement
 local function elem_div(left, right)
 	local left_mt = getmt(left)
 	if left_mt ~= BareElement_mt and left_mt ~= BuildingElement_mt then
@@ -606,7 +606,7 @@ local function elem_div(left, right)
 	if VOID_ELEMS[tag_name] then
 		error('attempt to perform division on a void element', 2)
 	end
-	return elem_chain_div(ElementChain({tag_name}, {rawget(left, SYM_ATTR_MAP)}), right)
+	return breadcrumb_div(Breadcrumb({tag_name}, {rawget(left, SYM_ATTR_MAP)}), right)
 end
 
 
@@ -623,13 +623,13 @@ BareElement_mt = {
 	__tostring = bare_elem_to_string,  --> string
 	__index = new_building_elem_by_shorthand_attrs,  --> BuildingElement
 	__call = new_built_elem_from_props,  --> BuiltElement
-	__div = elem_div,  --> ElementChain | BuiltElement
+	__div = elem_div,  --> Breadcrumb | BuiltElement
 	__newindex = error_wrong_newindex,
 }
 BuildingElement_mt = {
 	__tostring = elem_to_string,  --> string
 	__call = new_built_elem_from_props,  --> BuiltElement
-	__div = elem_div,  --> ElementChain | BuiltElement
+	__div = elem_div,  --> Breadcrumb | BuiltElement
 	__index = error_wrong_index,
 	__newindex = error_wrong_newindex,
 }
@@ -641,20 +641,20 @@ BuiltElement_mt = {
 		error('attempt to perform division on a built element', 2)
 	end,
 }
-ElementChain_mt = {
-	__tostring = elem_chain_to_string,  --> string
+Breadcrumb_mt = {
+	__tostring = breadcrumb_to_string,  --> string
 	__call = function (self, props)  --> BuiltElement
-		local root_elem, leaf_elem = elem_chain_to_built_elem(self)
+		local root_elem, leaf_elem = breadcrumb_to_built_elem(self)
 		local new_leaf_elem = new_built_elem_from_props(leaf_elem, props)
 		leaf_elem[SYM_ATTR_MAP] = new_leaf_elem[SYM_ATTR_MAP]
 		leaf_elem[SYM_CHILDREN] = new_leaf_elem[SYM_CHILDREN]
 		return root_elem
 	end,
-	__div = function (left, right)  --> ElementChain | BuiltElement
-		if getmt(left) ~= ElementChain_mt then
-			error('attempt to div a '..type(left)..' with an element chain', 2)
+	__div = function (left, right)  --> Breadcrumb | BuiltElement
+		if getmt(left) ~= Breadcrumb_mt then
+			error('attempt to div a '..type(left)..' with an breadcrumb', 2)
 		end
-		return elem_chain_div(left, right)
+		return breadcrumb_div(left, right)
 	end,
 	__index = error_wrong_index,
 	__newindex = error_wrong_newindex,
