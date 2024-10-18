@@ -358,7 +358,7 @@ local function get_elem_prop(self, key)
 		return children and children[key]  -- no error for ipairs
 	end
 
-	error("element property key type is neither 'string' nor 'number'", 2)
+	error("element property key's type is neither 'string' nor 'number'", 2)
 end
 
 
@@ -457,7 +457,7 @@ local function set_elem_prop(self, key, val)
 		end
 		children[key] = val
 	else
-		error('Element键类型只能是string或number', 2)
+		error("element property key's type is neither 'string' nor 'number'", 2)
 	end
 end
 
