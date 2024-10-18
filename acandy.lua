@@ -31,10 +31,10 @@ end)()
 
 ---@class Symbol
 
-local SYM_ATTR_MAP = {} ---@type Symbol
-local SYM_STRING = {} ---@type Symbol
-local SYM_CHILDREN = {} ---@type Symbol
-local SYM_TAG_NAME = {} ---@type Symbol
+local SYM_ATTR_MAP = {}  ---@type Symbol
+local SYM_STRING = {}  ---@type Symbol
+local SYM_CHILDREN = {}  ---@type Symbol
+local SYM_TAG_NAME = {}  ---@type Symbol
 
 local MTKEY_FRAG_LIKE = '__acandy_fragment_like'
 local MTKEY_PROPS_LIKE = '__acandy_props_like'
@@ -43,17 +43,17 @@ local MTKEY_PROPS_LIKE = '__acandy_props_like'
 local Raw_mt  ---@type metatable
 
 --- Create a Raw object, which would not be encoded when converted to string.
---- @param val any value to be converted to string by `tostring()`
---- @return table
+---@param val any value to be converted to string by `tostring()`
+---@return table
 local function Raw(val)
 	return setmt({[SYM_STRING] = tostring(val)}, Raw_mt)
 end
 
 Raw_mt = {
-	__tostring = function(self)
+	__tostring = function (self)
 		return self[SYM_STRING]
 	end,
-	__concat = function(left, right)
+	__concat = function (left, right)
 		if getmt(left) ~= Raw_mt or getmt(right) ~= Raw_mt then
 			error('Raw object can only be concatenated with another Raw object', 2)
 		end
@@ -224,14 +224,14 @@ local function extend_strings_with_attrs(strs, attr_map, strs_len)
 			-- boolean attributes
 			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
 			strs_len = strs_len + 2
-			strs[strs_len-1] = ' '
+			strs[strs_len - 1] = ' '
 			strs[strs_len] = k
 		elseif v then  -- exclude the case `v == false`
 			strs_len = strs_len + 5
-			strs[strs_len-4] = ' '
-			strs[strs_len-3] = k
-			strs[strs_len-2] = '="'
-			strs[strs_len-1] = utils.attr_encode(tostring(v))
+			strs[strs_len - 4] = ' '
+			strs[strs_len - 3] = k
+			strs[strs_len - 2] = '="'
+			strs[strs_len - 1] = utils.attr_encode(tostring(v))
 			strs[strs_len] = '"'
 		end
 	end
@@ -515,8 +515,8 @@ local function connect_elem_chains(chain1, chain2)
 	local len = #new_tag_names
 	attr_maps_to_copy_from = chain2[SYM_ATTR_MAP]
 	for i, tag_name in ipairs(chain2[SYM_TAG_NAME]) do
-		new_tag_names[len+i] = tag_name
-		new_attr_maps[len+i] = attr_maps_to_copy_from[i]
+		new_tag_names[len + i] = tag_name
+		new_attr_maps[len + i] = attr_maps_to_copy_from[i]
 	end
 	return ElementChain(new_tag_names, new_attr_maps)
 end
@@ -555,8 +555,8 @@ local function elem_chain_to_built_elem(chain)
 	local attr_maps = chain[SYM_ATTR_MAP]
 	local leaf_elem
 	local function f(i)
-		if tag_names[i+1] then
-			return BuiltElement(tag_names[i], attr_maps[i] or {}, {f(i+1)})
+		if tag_names[i + 1] then
+			return BuiltElement(tag_names[i], attr_maps[i] or {}, {f(i + 1)})
 		end
 		leaf_elem = BuiltElement(tag_names[i], attr_maps[i] or {}, {})
 		return leaf_elem
@@ -639,18 +639,18 @@ BuiltElement_mt = {
 	__newindex = set_elem_prop,
 	__div = function ()
 		error('attempt to perform division on a built element', 2)
-	end
+	end,
 }
 ElementChain_mt = {
 	__tostring = elem_chain_to_string,  --> string
-	__call = function(self, props)  --> BuiltElement
+	__call = function (self, props)  --> BuiltElement
 		local root_elem, leaf_elem = elem_chain_to_built_elem(self)
 		local new_leaf_elem = new_built_elem_from_props(leaf_elem, props)
 		leaf_elem[SYM_ATTR_MAP] = new_leaf_elem[SYM_ATTR_MAP]
 		leaf_elem[SYM_CHILDREN] = new_leaf_elem[SYM_CHILDREN]
 		return root_elem
 	end,
-	__div = function(left, right)  --> ElementChain | BuiltElement
+	__div = function (left, right)  --> ElementChain | BuiltElement
 		if getmt(left) ~= ElementChain_mt then
 			error('attempt to div a '..type(left)..' with an element chain', 2)
 		end
@@ -667,7 +667,7 @@ local acandy_mt = {  ---@type metatable
 	--- When indexing a uncached tag name, return a constructor of that element.
 	---@param key string
 	---@return BareElement
-	__index = function(self, key)
+	__index = function (self, key)
 		if not utils.is_valid_xml_name(key) then
 			error('invalid tag name: '..tostring(key), 2)
 		end
@@ -690,22 +690,23 @@ local acandy_mt = {  ---@type metatable
 
 
 local some = setmt({}, {
-	__index = function(_, key)
+	__index = function (_, key)
 		local bare_elem = acandy[key]
-
 		local mt = {}
+
 		function mt:__index(shorthand)
 			local building_elem = bare_elem[shorthand]
-			return function(...)
+			return function (...)
 				return setmt(utils.map_varargs(building_elem, ...), Fragment_mt)
 			end
 		end
+
 		function mt:__call(...)
 			return setmt(utils.map_varargs(bare_elem, ...), Fragment_mt)
 		end
 
 		return setmt({}, mt)
-	end
+	end,
 })
 
 

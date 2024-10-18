@@ -9,7 +9,7 @@ describe('overall test', function ()
 	it('should succeed', function ()
 		local f = a.Fragment {
 			a.h1['#top heading heading-1'] 'Hello!',
-			a.div { class="container", style="margin: 0 auto;",
+			a.div {class = "container", style = "margin: 0 auto;",
 				a.p {
 					'My name is ', a.dfn('ACandy'), ', a module for building HTML.',
 					a.br,
@@ -79,7 +79,7 @@ describe('base element', function ()
 			a.div.children = {}
 		end)
 		assert.has.error(function ()
-			a.div.attributes = { id = 'id' }
+			a.div.attributes = {id = 'id'}
 		end)
 		assert.has.error(function ()
 			a.div[1] = 'child'
@@ -100,7 +100,7 @@ describe('building element', function ()
 
 		assert.are.equal(tostring(div['#my-id']), '<div id="my-id"></div>')
 		assert.are.equal(tostring(div[' #my-id ']), '<div id="my-id"></div>')
-		
+
 		assert.is_true(match_html(
 			tostring(div['#my-id my-class']),
 			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
@@ -130,7 +130,7 @@ describe('building element', function ()
 
 	it('can be gotten by indexing a base element with table', function ()
 		assert.is_true(match_html(
-			tostring(div[{ id="my-id", class="my-class" }]),
+			tostring(div[{id = "my-id", class = "my-class"}]),
 			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
 		))
 	end)
@@ -163,7 +163,7 @@ describe('building element', function ()
 			elem.children = {}
 		end)
 		assert.has.error(function ()
-			elem.attributes = { id = 'id' }
+			elem.attributes = {id = 'id'}
 		end)
 		assert.has.error(function ()
 			elem[1] = 'child'
@@ -192,23 +192,23 @@ describe('built element', function ()
 
 		assert.is_true(match_html(
 			tostring(a.div {
-				class="cls", id="id", ['data-uwu']="UwU",
+				class = "cls", id = "id", ['data-uwu'] = "UwU",
 				'a', 1,
 				{'b', 2},
 				function ()
 					return {'c', 3, function () return {'d', 4} end}
 				end,
 			}),
-			'<div', {' class="cls"',' id="id"', ' data-uwu="UwU"'}, '>a1b2c3d4</div>'
+			'<div', {' class="cls"', ' id="id"', ' data-uwu="UwU"'}, '>a1b2c3d4</div>'
 		))
 	end)
 
 	it('can come from building element', function ()
-		local building = a.div[{ class="cls" }]
+		local building = a.div[{class = "cls"}]
 		assert.are.equal(tostring(building()), '<div class="cls"></div>')
 		assert.are.equal(tostring(building('hi')), '<div class="cls">hi</div>')
 		assert.is_true(match_html(
-			tostring(building({ class="new", id="id", 'hi'})),
+			tostring(building({class = "new", id = "id", 'hi'})),
 			'<div', {' class="new"', ' id="id"'}, '>hi</div>'
 		))
 		assert.are.equal(tostring(building {
@@ -222,7 +222,7 @@ describe('built element', function ()
 
 	it('has properties', function ()
 		local li = a.li 'item 1'
-		local list = a.ol { id="my-id", li }
+		local list = a.ol {id = "my-id", li}
 
 		-- get
 		assert.are.equal(list.tag_name, 'ol')
@@ -255,11 +255,11 @@ describe('non-bare element', function ()
 			'<div class="&lt; &gt; &amp; &quot; &amp;amp;"></div>'
 		)
 		assert.are.equal(
-			tostring(a.div[{ class='< > & " &amp;' }]),
+			tostring(a.div[{class = '< > & " &amp;'}]),
 			'<div class="&lt; &gt; &amp; &quot; &amp;amp;"></div>'
 		)
 		assert.are.equal(
-			tostring(a.div { class='< > & " &amp;' }),
+			tostring(a.div {class = '< > & " &amp;'}),
 			'<div class="&lt; &gt; &amp; &quot; &amp;amp;"></div>'
 		)
 	end)
