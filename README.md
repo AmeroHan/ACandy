@@ -9,9 +9,6 @@ ACandy 是一个构建 HTML 的 Lua 模块。利用 Lua 的语法糖和元表，
 
 ## Take a peek | 瞄一瞄
 
-Check [examples.lua](./examples.lua) for more examples.  
-于 [examples.lua](./examples.lua) 查阅更多示例。
-
 ```lua
 local a = require 'acandy'
 local some = a.some

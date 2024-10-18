@@ -22,9 +22,9 @@ local rawget = rawget
 local rawset = rawset
 local tostring = tostring
 
-local utils = require('acandy.utils')
+local utils = require('.utils')
 local VOID_ELEMS, HTML_ELEMS, NO_ENCODE_ELEMS = (function ()
-	local config = require('acandy.elem_config')
+	local config = require('.elem_config')
 	return config.VOID_ELEMS, config.HTML_ELEMS, config.NO_ENCODE_ELEMS
 end)()
 
