@@ -16,6 +16,17 @@ function utils.shallow_copy(t)
 	return out
 end
 
+---Shallow copy a table without calling `__pairs` metamethod
+---@param t table
+---@return table
+function utils.raw_shallow_copy(t)
+	local out = {}
+	for k, v in next, t do
+		out[k] = v
+	end
+	return out
+end
+
 ---Shallow copy a table's sequence part.
 ---@param t table
 ---@return table
@@ -65,6 +76,13 @@ end
 ---@return any
 function utils.is_valid_xml_name(name)
 	return type(name) == 'string' and name:find('^[:%a_][:%w_%-%.]*$')  -- https://www.w3.org/TR/xml/#NT-Name
+end
+
+---Retrun truthy value when `name` reserved by Lua (e.g., '_G', '_PROMPT'), otherwise falsy value.
+---@param name any
+---@return any
+function utils.is_lua_reserved_name(name)
+	return type(name) == 'string' and name:find('^_[%u%d]+$')
 end
 
 ---@param str string | number

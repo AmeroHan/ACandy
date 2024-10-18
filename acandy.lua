@@ -683,9 +683,57 @@ local some = setmt({}, {
 })
 
 
+---@param base_index table | (fun(t: any, k: any): any) | nil
+---@return fun(t: any, k: any): any
+local function to_extended_index(base_index)
+	local function fallback(_t, k)
+		if utils.is_lua_reserved_name(k) then return nil end
+		return a[k]
+	end
+
+	if not base_index then
+		return fallback
+	elseif type(base_index) == "function" then
+		return function (t, k)
+			local v = base_index(t, k)
+			if v ~= nil then return v end
+			return fallback(t, k)
+		end
+	end
+	return function (t, k)
+		local v = base_index[k]
+		if v ~= nil then return v end
+		return fallback(t, k)
+	end
+end
+
+---Extend the environment in place with `acandy.a` as `__index`.
+---@param env table # the environment to be extended, e.g. `_ENV`, `_G`
+local function extend_env(env)
+	local mt = getmt(env)
+	if mt then
+		rawset(mt, '__index', to_extended_index(rawget(mt, '__index')))
+	else
+		setmt(env, {__index = to_extended_index(nil)})
+	end
+end
+
+---Return a new environment based on `env` with `acandy.a` as `__index`.
+---@param env table # the environment on which the new environment is based, e.g. `_ENV`, `_G`
+---@return table
+local function to_extended_env(env)
+	local base_mt = getmt(env)
+	local new_mt = base_mt and utils.raw_shallow_copy(base_mt) or {}
+	new_mt.__index = to_extended_index(new_mt.__index)
+	return setmt(utils.raw_shallow_copy(env), new_mt)
+end
+
+
 return {
 	a = a,
 	some = some,
 	Fragment = Fragment,
 	Raw = Raw,
+	extend_env = extend_env,
+	to_extended_env = to_extended_env,
 }

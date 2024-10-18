@@ -411,7 +411,7 @@ print(items)
 </ul>
 ```
 
-## Element instance properties | 元素实例属性
+## Element instance | 元素实例
 
 If an element is obtained by calling functions like `a.div(...)`, `a.div[...](...)`, it is called (tentatively) a "**constructed element**"; when a constructed element is the end of a breadcrumb, the breadcrumb also returns a constructed element; while `a.div`, `a.div[...]` are not constructed elements.  
 如果一个元素是 `a.div(...)`、`a.div[...](...)` 这类进行函数调用得出的元素，则称它为“**已构建元素**”（暂定）；已构建元素作为元素链末端的元素时，该元素链同样返回一个已构建元素；而 `a.div`、`a.div[...]` 则不属于已构建元素。
@@ -464,6 +464,113 @@ print(elem)
    <li>item 2</li>
    <li>item 3</li>
 </ul>
+```
+
+## Environmental methods | 环境方法
+
+### `acandy.extend_env`
+
+```lua
+function acandy.extend_env(env: table) -> nil
+```
+
+Extend the environment in place with `acandy.a` as `__index`, e.g., `_ENV`. This makes it possible to directly use the element name rather than tediously type `a.`, unless there is a naming conflict with local variables or global variables.  
+使用 `acandy.a` 作为 `__index` 来扩展传入的环境，例如 `_ENV`。这使得能够直接使用元素名不需要显式地使用 `a.`，而是，除非与局部变量或全局变量有命名冲突。
+
+> [!WARNING]
+> It is not recommended to use this method on the global environment, as it may cause hard-to-detect naming conflicts.  
+> 不建议对全局环境使用此方法，因为可能会造成难以察觉的命名冲突。
+
+```lua
+local acandy = require 'acandy'
+local a = acandy.a
+acandy.extend_env(_ENV)
+
+print(
+   -- normally you can access an element without `a.`
+   div {
+      -- use `a.table` to avoid the naming conflict with Lua's `table` module (a global value)
+      a.table {
+         tr { td 'foo' },
+      },
+      -- or use a different case
+      TABLE {
+         tr { td 'bar' },
+      }
+      ul {
+         -- use `a.a` to avoid the naming conflict with `a` from `acandy` (a local value)
+         li / a.a { href="/home", 'Home' },
+         -- or use a different case
+         li / A { href="/about", 'About' },
+      }
+   }
+)
+```
+
+```html
+<div>
+   <table>
+      <tr><td>foo</td></tr>
+   </table>
+   <table>
+      <tr><td>bar</td></tr>
+   </table>
+   <ul>
+      <li><a href="/home">Home</a></li>
+      <li><a href="/about">About</a></li>
+   </ul>
+</div>
+```
+
+### `acandy.to_extended_env`
+
+```lua
+function acandy.to_extended_env(env: table) -> table
+```
+
+Similar to `acandy.extend_env`, but returns a new table instead of modifying the original table.  
+类似于 `acandy.extend_env`，但返回一个新表而不是修改原表。
+
+```lua
+-- on Lua 5.2+
+local function get_article()
+   local _ENV = acandy.to_extended_env(_ENV)
+   return (
+      article {
+         header / h2 'Title',
+         main {
+            p 'Paragraph 1',
+            p 'Paragraph 2',
+         }
+      }
+   )
+end
+-- on Lua 5.1
+local get_article = setfenv(function ()
+   return (
+      article {
+         header / h2 'Title',
+         main {
+            p 'Paragraph 1',
+            p 'Paragraph 2',
+         }
+      }
+   )
+end, acandy.to_extended_env(_G))
+
+print(get_article())
+```
+
+```html
+<article>
+   <header>
+      <h2>Title</h2>
+   </header>
+   <main>
+      <p>Paragraph 1</p>
+      <p>Paragraph 2</p>
+   </main>
+</article>
 ```
 
 ## Contribute | 贡献
