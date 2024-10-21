@@ -4,8 +4,8 @@
 This work uses <a href="https://semver.org/">Semantic Versioning</a> | 本项目使用<a href="https://semver.org/">语义化版本</a>
 </p>
 
-ACandy is a Lua module for building HTML, which takes advantage of Lua’s syntactic sugar and metatable, giving an intuitive way to build HTML from Lua. It is, maybe, an internal DSL.  
-ACandy 是一个构建 HTML 的 Lua 模块。利用 Lua 的语法糖和元表，ACandy 提供了一个易用的方式来从 Lua 构建 HTML。大概算是一个内部 DSL。
+ACandy is a Lua module for building HTML, which takes advantage of Lua’s syntactic sugar and metatable, giving an intuitive way to build HTML from Lua. It is an internal DSL.  
+ACandy 是一个构建 HTML 的 Lua 模块。利用 Lua 的语法糖和元表，ACandy 提供了一个易用的方式来从 Lua 构建 HTML。它是一个内部 DSL。
 
 ## Take a peek | 瞄一瞄
 
@@ -474,8 +474,8 @@ print(elem)
 function acandy.extend_env(env: table) -> nil
 ```
 
-Extend the environment in place with `acandy.a` as `__index`, e.g., `_ENV`. This makes it possible to directly use the element name rather than tediously type `a.`, unless there is a naming conflict with local variables or global variables.  
-使用 `acandy.a` 作为 `__index` 来扩展传入的环境，例如 `_ENV`。这使得能够直接使用元素名不需要显式地使用 `a.`，而是，除非与局部变量或全局变量有命名冲突。
+Extend the environment in place with `acandy.a` as `__index`, e.g., `_ENV`. This makes it possible to directly use the tag name rather than tediously type `a.`, unless there is a naming conflict with local variables or global variables.  
+使用 `acandy.a` 作为 `__index` 来扩展传入的环境，例如 `_ENV`。这使得能够直接使用元素名不需要显式地使用 `a.`，除非与局部变量或全局变量有命名冲突。
 
 > [!WARNING]
 > It is not recommended to use this method on the global environment, as it may cause hard-to-detect naming conflicts.  
