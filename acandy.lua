@@ -40,29 +40,6 @@ local MTKEY_FRAG_LIKE = '__acandy_fragment_like'
 local MTKEY_PROPS_LIKE = '__acandy_props_like'
 
 
-local Raw_mt
-Raw_mt = {  ---@type metatable
-	__tostring = function (self)
-		return self[SYM_STRING]
-	end,
-	__concat = function (left, right)
-		if getmt(left) ~= Raw_mt or getmt(right) ~= Raw_mt then
-			error('Raw object can only be concatenated with another Raw object', 2)
-		end
-		return setmt({[SYM_STRING] = left[SYM_STRING]..right[SYM_STRING]}, Raw_mt)
-	end,
-	__newindex = function ()
-		error('Raw object is not mutable', 2)
-	end,
-}
-
----Create a Raw object, which would not be encoded when converted to string.
----@param val any value to be converted to string by `tostring()`
----@return table
-local function Raw(val)
-	return setmt({[SYM_STRING] = tostring(val)}, Raw_mt)
-end
-
 ---An array-like table with metatable `Fragment_mt`.
 ---@class Fragment: table
 
@@ -728,12 +705,17 @@ local function to_extended_env(env)
 	return setmt(utils.raw_shallow_copy(env), new_mt)
 end
 
+local classes = require('.classes')
 
 return {
+	-- namespaces
 	a = a,
 	some = some,
+	-- classes
 	Fragment = Fragment,
-	Raw = Raw,
+	Raw = classes.Raw,
+	Doctype = classes.Doctype,
+	-- functions
 	extend_env = extend_env,
 	to_extended_env = to_extended_env,
 }

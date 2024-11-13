@@ -303,6 +303,15 @@ print(elem)
 > breadcrumbs can be cached, just like `link_item` in the above example.  
 > 元素链可以缓存，就像上面这个例子中的 `link_item`。
 
+### `acandy.Doctype`
+
+`Doctype` is a special node that represents the document type declaration (DTD). Currently only the HTML5 doctype is supported. It is accessed by `DocType.HTML`.  
+`Doctype` 是一类特殊的结点，代表文档类型声明（DTD）。目前仅支持 HTML5 的文档类型声明，通过 `Doctype.HTML` 获取。
+
+```lua
+tostring(acandy.Doctype.HTML)  --> '<!DOCTYPE html>'
+```
+
 ### `acandy.Fragment`
 
 `Fragment` holds multiple elements. The only differences between `Fragment` and a regular table are:  
