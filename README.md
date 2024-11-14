@@ -301,7 +301,7 @@ print(elem)
 
 > [!TIP]
 > breadcrumbs can be cached, just like `link_item` in the above example.  
-> 元素链可以缓存，就像上面这个例子中的 `link_item`。
+> 面包屑可以缓存，就像上面这个例子中的 `link_item`。
 
 ### `acandy.Doctype`
 
@@ -423,7 +423,7 @@ print(items)
 ## Element instance | 元素实例
 
 If an element is obtained by calling functions like `a.div(...)`, `a.div[...](...)`, it is called (tentatively) a "**constructed element**"; when a constructed element is the end of a breadcrumb, the breadcrumb also returns a constructed element; while `a.div`, `a.div[...]` are not constructed elements.  
-如果一个元素是 `a.div(...)`、`a.div[...](...)` 这类进行函数调用得出的元素，则称它为“**已构建元素**”（暂定）；已构建元素作为元素链末端的元素时，该元素链同样返回一个已构建元素；而 `a.div`、`a.div[...]` 则不属于已构建元素。
+如果一个元素是 `a.div(...)`、`a.div[...](...)` 这类进行函数调用得出的元素，则称它为“**已构建元素**”（暂定）；已构建元素作为面包屑末端的元素时，该面包屑同样返回一个已构建元素；而 `a.div`、`a.div[...]` 则不属于已构建元素。
 
 A constructed element `elem` has the following properties:  
 对于一个已构建的元素 `elem`，它有如下属性：
