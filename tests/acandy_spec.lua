@@ -6,7 +6,7 @@ local a, some, Fragment = acandy.a, acandy.some, acandy.Fragment
 local match_html = utils.match_html
 
 
-describe('overall test', function ()
+describe('Overall test', function ()
 	it('should succeed', function ()
 		local f = Fragment {
 			a.h1['#top heading heading-1'] 'Hello!',
@@ -40,7 +40,7 @@ describe('overall test', function ()
 end)
 
 
-describe('acandy entry', function ()
+describe('ACandy entry', function ()
 	it('should return the same instance for the same key', function ()
 		assert.is_true(rawequal(a.div, a.div))
 		assert.is_true(rawequal(a.MyElement, a.MyElement))
@@ -65,7 +65,7 @@ describe('acandy entry', function ()
 end)
 
 
-describe('base element', function ()
+describe('Base element', function ()
 	it('returns HTML string when `tostring`', function ()
 		assert.are.equal(tostring(a.div), '<div></div>')
 		assert.are.equal(tostring(a.br), '<br>')
@@ -92,7 +92,7 @@ describe('base element', function ()
 end)
 
 
-describe('building element', function ()
+describe('Building element', function ()
 	local div = a.div
 
 	it('can be gotten by indexing a base element with id and/or class', function ()
@@ -176,7 +176,7 @@ describe('building element', function ()
 end)
 
 
-describe('built element', function ()
+describe('Built element', function ()
 	it('can come from base element', function ()
 		assert.are.equal(tostring(a.div()), '<div></div>')
 		assert.are.equal(tostring(a.div('hi')), '<div>hi</div>')
@@ -249,50 +249,46 @@ describe('built element', function ()
 end)
 
 
-describe('non-bare element', function ()
-	it('convert `< > & "` in attributes of HTML into entities', function ()
-		assert.are.equal(
-			tostring(a.div['< > & " &amp;']),
-			'<div class="&lt; &gt; &amp; &quot; &amp;amp;"></div>'
-		)
-		assert.are.equal(
-			tostring(a.div[{class = '< > & " &amp;'}]),
-			'<div class="&lt; &gt; &amp; &quot; &amp;amp;"></div>'
-		)
-		assert.are.equal(
-			tostring(a.div {class = '< > & " &amp;'}),
-			'<div class="&lt; &gt; &amp; &quot; &amp;amp;"></div>'
-		)
+describe('String escaping', function ()
+	local str = '& \160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
+
+	it('replaces `& NBSP " < >` in attribute values with named references', function ()
+		local answer = '<div class="'
+			..'&amp; &nbsp; &quot; \' &lt; &gt; '
+			..'&amp;amp; &amp;nbsp; &amp;quot; &amp;apos; &amp;lt; &amp;gt;'
+			..'"></div>'
+		assert.are.equal(tostring(a.div[str]), answer)
+		assert.are.equal(tostring(a.div[{class = str}]), answer)
+		assert.are.equal(tostring(a.div {class = str}), answer)
 	end)
 
-	it('only convert `< > &` in text of HTML into entities', function ()
-		assert.are.equal(
-			tostring(a.div('< > & " &amp;')),
-			'<div>&lt; &gt; &amp; " &amp;amp;</div>'
-		)
+	it('replaces `& NBSP < >` in texts other than attribute value with named references', function ()
+		local answer = '<div>'
+			..'&amp; &nbsp; " \' &lt; &gt; '
+			..'&amp;amp; &amp;nbsp; &amp;quot; &amp;apos; &amp;lt; &amp;gt;'
+			..'</div>'
+		assert.are.equal(tostring(a.div(str)), answer)
 	end)
 
-	it("doesn't convert strings as object properties", function ()
-		local elem = a.div['< > & " &amp;'] '< > & " &amp;'
+	it("does not replace characters in an object's properties", function ()
+		local elem = a.div[str](str)
+		assert.are.equal(elem.class, str)
+		assert.are.equal(elem[1], str)
 		local _ = tostring(elem)
-		assert.are.equal(elem.class, '< > & " &amp;')
-		assert.are.equal(elem[1], '< > & " &amp;')
+		assert.are.equal(elem.class, str)
+		assert.are.equal(elem[1], str)
 	end)
 end)
 
-describe('`a.style` or `a.script`', function ()
-	it("doesn't encode any character in text child", function ()
-		assert.are.equal(
-			tostring(a.style('< > & " &amp;')),
-			'<style>< > & " &amp;</style>'
-		)
-		assert.are.equal(
-			tostring(a.script('< > & " &amp;')),
-			'<script>< > & " &amp;</script>'
-		)
+describe('Raw text element', function ()
+	local str = '& \160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
+
+	it("does not encode any character in text child", function ()
+		assert.are.equal(tostring(a.style(str)), '<style>'..str..'</style>')
+		assert.are.equal(tostring(a.script(str)), '<script>'..str..'</script>')
 	end)
 
-	it("doesn't check end tag", function ()
+	it("does not check end tag", function ()
 		assert.are.equal(tostring(a.style('</style>')), '<style></style></style>')
 		assert.are.equal(tostring(a.script('</script>')), '<script></script></script>')
 	end)
