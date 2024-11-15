@@ -250,7 +250,7 @@ end)
 
 
 describe('String escaping', function ()
-	local str = '& \160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
+	local str = '& \194\160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
 
 	it('replaces `& NBSP " < >` in attribute values with named references', function ()
 		local answer = '<div class="'
@@ -281,7 +281,7 @@ describe('String escaping', function ()
 end)
 
 describe('Raw text element', function ()
-	local str = '& \160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
+	local str = '& \194\160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
 
 	it("does not encode any character in text child", function ()
 		assert.are.equal(tostring(a.style(str)), '<style>'..str..'</style>')

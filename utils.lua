@@ -50,9 +50,10 @@ function utils.map_varargs(func, ...)
 	return t
 end
 
+local NBSP = '\194\160'
 local ENTITY_ENCODE_MAP = {
 	['&'] = '&amp;',
-	['\160'] = '&nbsp;',
+	[NBSP] = '&nbsp;',
 	['"'] = '&quot;',
 	['<'] = '&lt;',
 	['>'] = '&gt;',
@@ -62,14 +63,14 @@ local ENTITY_ENCODE_MAP = {
 ---@param str string | number
 ---@return string
 function utils.attr_encode(str)
-	return (s_gsub(str, '[&\160"<>]', ENTITY_ENCODE_MAP))
+	return (s_gsub(str, '\194?[\160&"<>]', ENTITY_ENCODE_MAP))
 end
 
 ---Replace `&`, NBSP, `<`, `>` with entities.
 ---@param str string | number
 ---@return string
 function utils.html_encode(str)
-	return (s_gsub(str, '[&\160<>]', ENTITY_ENCODE_MAP))
+	return (s_gsub(str, '\194?[\160&<>]', ENTITY_ENCODE_MAP))
 end
 
 ---Retrun truthy value when `name` is a valid XML name, otherwise falsy value.
