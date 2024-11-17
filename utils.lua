@@ -44,9 +44,10 @@ end
 ---@vararg any
 ---@return any[]
 function utils.map_varargs(func, ...)
-	local t = {}
-	for i, v in ipairs {...} do
-		t[i] = func(v)
+	local n = select('#', ...)
+	local t = {...}
+	for i = 1, n do
+		t[i] = func(t[i])
 	end
 	return t
 end
