@@ -7,36 +7,39 @@ local s_gsub = string.gsub
 local utf8 = utf8 or require('.utf8_polyfill')
 
 ---Shallow copy a table.
----@param t table
+---@param from table
+---@---@param into table?
 ---@return table
-function utils.shallow_copy(t)
-	local out = {}
-	for k, v in pairs(t) do
-		out[k] = v
+function utils.shallow_copy(from, into)
+	into = into or {}
+	for k, v in pairs(from) do
+		into[k] = v
 	end
-	return out
+	return into
 end
 
 ---Shallow copy a table without calling `__pairs` metamethod
----@param t table
+---@param from table
+---@param into table?
 ---@return table
-function utils.raw_shallow_copy(t)
-	local out = {}
-	for k, v in next, t do
-		out[k] = v
+function utils.raw_shallow_copy(from, into)
+	into = into or {}
+	for k, v in next, from do
+		into[k] = v
 	end
-	return out
+	return into
 end
 
 ---Shallow copy a table's sequence part.
----@param t table
+---@param from table
+---@param into table?
 ---@return table
-function utils.shallow_icopy(t)
-	local out = {}
-	for i, v in ipairs(t) do
-		out[i] = v
+function utils.shallow_icopy(from, into)
+	into = into or {}
+	for i, v in ipairs(from) do
+		into[i] = v
 	end
-	return out
+	return into
 end
 
 ---Apply `func` to each element of `...` and return a table.

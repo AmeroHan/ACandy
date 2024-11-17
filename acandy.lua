@@ -36,24 +36,31 @@ local SYM_STRING = {}  ---@type Symbol
 local SYM_CHILDREN = {}  ---@type Symbol
 local SYM_TAG_NAME = {}  ---@type Symbol
 
-local MTKEY_FRAG_LIKE = '__acandy_fragment_like'
-local MTKEY_PROPS_LIKE = '__acandy_props_like'
+local KEY_LIST_LIKE = '__acandy_list_like'
+local KEY_DATA_TABLE_LIKE = '__acandy_data_table_like'
+
+---@param v any
+---@return integer @ 1: list-like, 2: data-table-like, 0: others
+local function get_container_level(v)
+	local mt = getmt(v)
+	if not mt then
+		return type(v) == 'table' and 2 or 0
+	end
+	if mt[KEY_DATA_TABLE_LIKE] == true then
+		return 2
+	elseif mt[KEY_LIST_LIKE] == true then
+		return 1
+	end
+	return 0
+end
 
 
----An array-like table with metatable `Fragment_mt`.
+---A list-like table with metatable `Fragment_mt`.
 ---@class Fragment: table
 
 ---Metatable used by Fragment object.
 ---@type metatable
 local Fragment_mt
-
----Whether `t` can be treated as a Fragment.
----@param t table
----@return boolean
-local function is_table_fragment_like(t)
-	local mt = getmt(t)
-	return not mt or mt == Fragment_mt or mt[MTKEY_FRAG_LIKE] == true
-end
 
 ---Append the serialized string of the Fragment to `strs`.
 ---Use len to avoid calling `#strs` repeatedly. This improves performance by
@@ -68,7 +75,7 @@ local function extend_strings_with_fragment(strs, frag, strs_len, no_encode)
 
 	local function append_serialized(node)
 		local node_type = type(node)
-		if node_type == 'table' and is_table_fragment_like(node) then  -- Fragment
+		if get_container_level(node) >= 1 then  -- Fragment
 			for _, child_node in ipairs(node) do
 				append_serialized(child_node)
 			end
@@ -108,13 +115,14 @@ Fragment_mt = {
 		---@diagnostic disable-next-line: deprecated
 		unpack = table.unpack or unpack,
 	},
+	[KEY_LIST_LIKE] = true,
 }
 
 ---Constructor of Fragment.
 ---@param children any?
 ---@return Fragment
 local function Fragment(children)
-	if type(children) == 'table' and is_table_fragment_like(children) then
+	if get_container_level(children) >= 1 then
 		return setmt(utils.shallow_icopy(children), Fragment_mt)
 	end
 	return setmt({children}, Fragment_mt)
@@ -314,31 +322,24 @@ local function get_elem_prop(self, key)
 end
 
 
-local function is_table_props_like(t)
-	local mt = getmt(t)
-	return not mt or mt[MTKEY_PROPS_LIKE] == true
-end
-
-
 ---@param self BareElement | BuildingElement | BuiltElement
----@param props_or_child any
+---@param props any
 ---@return BuiltElement
-local function new_built_elem_from_props(self, props_or_child)
+local function new_built_elem_from_props(self, props)
 	local tag_name = self[SYM_TAG_NAME]
 	local attr_map = rawget(self, SYM_ATTR_MAP) or {}
 	local new_attr_map = utils.shallow_copy(attr_map)
-	local arg_is_props_like = type(props_or_child) == 'table' and is_table_props_like(props_or_child)
+	local container_level = get_container_level(props)
 
 	if VOID_ELEMS[tag_name] then  -- void element, e.g. <br>, <img>
-		if arg_is_props_like then
-			-- props_or_child is props
+		if container_level == 2 then
 			-- set attributes
-			for k, v in pairs(props_or_child) do
+			for k, v in pairs(props) do
 				if type(k) == 'string' then
 					if not utils.is_html_attr_name(k) then
 						error('invalid attribute name: '..k, 2)
 					end
-					new_attr_map[k] = v;
+					new_attr_map[k] = v
 				end
 			end
 		end
@@ -346,20 +347,22 @@ local function new_built_elem_from_props(self, props_or_child)
 	end
 
 	local new_children = {}
-	if arg_is_props_like then
-		-- props_or_child is props
-		for k, v in pairs(props_or_child) do
-			if type(k) == 'number' then
-				new_children[k] = v;
-			elseif type(k) == 'string' then
+	if container_level == 2 then
+		for k, v in pairs(props) do
+			local t = type(k)
+			if t == 'number' then
+				new_children[k] = v
+			elseif t == 'string' then
 				if not utils.is_html_attr_name(k) then
 					error('invalid attribute name: '..k, 2)
 				end
-				new_attr_map[k] = v;
+				new_attr_map[k] = v
 			end
 		end
-	else  -- props_or_child is child
-		new_children[1] = props_or_child
+	elseif container_level == 1 then
+		utils.shallow_icopy(props, new_children)
+	else  -- treat as a single child
+		new_children[1] = props
 	end
 
 	return BuiltElement(tag_name, new_attr_map, new_children)
@@ -417,16 +420,24 @@ end
 ---Sementic sugar for setting attributes.
 ---e.g. `local elem = acandy.div['#id cls1 cls2']`
 ---@param self BareElement
----@param shorthand_attrs string | table
+---@param attrs string | table
 ---@return BuildingElement
-local function new_building_elem_by_shorthand_attrs(self, shorthand_attrs)
+local function new_building_elem_by_shorthand_attrs(self, attrs)
 	local attr_map
-	if type(shorthand_attrs) == 'string' then
-		attr_map = utils.parse_shorthand_attrs(shorthand_attrs)
-	elseif type(shorthand_attrs) == 'table' then
-		attr_map = shorthand_attrs
+	if type(attrs) == 'string' then
+		attr_map = utils.parse_shorthand_attrs(attrs)
+	elseif get_container_level(attrs) == 2 then
+		attr_map = {}
+		for k, v in pairs(attrs) do
+			if type(k) == 'string' then
+				if not utils.is_html_attr_name(k) then
+					error('invalid attribute name: '..k, 2)
+				end
+				attr_map[k] = v
+			end
+		end
 	else
-		error('invalid attributes: '..tostring(shorthand_attrs), 2)
+		error('invalid attributes: '..tostring(attrs), 2)
 	end
 	return BuildingElement(self[SYM_TAG_NAME], attr_map)
 end
