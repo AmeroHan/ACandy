@@ -303,80 +303,6 @@ print(elem)
 > breadcrumbs can be cached, just like `link_item` in the above example.  
 > 面包屑可以缓存，就像上面这个例子中的 `link_item`。
 
-### `acandy.Doctype`
-
-`Doctype` is a special node that represents the document type declaration (DTD). Currently only the HTML5 doctype is supported. It is accessed by `DocType.HTML`.  
-`Doctype` 是一类特殊的结点，代表文档类型声明（DTD）。目前仅支持 HTML5 的文档类型声明，通过 `Doctype.HTML` 获取。
-
-```lua
-tostring(acandy.Doctype.HTML)  --> '<!DOCTYPE html>'
-```
-
-### `acandy.Fragment`
-
-`Fragment` holds multiple elements. The only differences between `Fragment` and a regular table are:  
-`Fragment` 承载多个元素。`Fragment` 和普通表的仅有的区别就是：
-
-- It has `__tostring` set, so you can get the HTML string;  
-  设置了 `__tostring`，可以得到 HTML 字符串；
-- It has `__index` set, so you can call all methods in the `table` library which take a table as the first parameter (e.g., `table.insert`, `table.remove`) in an object-oriented manner.  
-  设置了 `__index`，可以以类似面向对象的形式调用 `table.insert`、`table.remove` 等 `table` 库中所有以表为第一个参数的方法。
-
-You can create an empty Fragment with `Fragment()` or `Fragment({})`.  
-可以通过 `Fragment()` 或 `Fragment({})` 创建一个空的 Fragment。
-
-When there is only one element, `Fragment(<child>)` is equivalent to `Fragment({ <child> })`.  
-当仅有一个元素时，`Fragment(<child>)` 与 `Fragment({ <child> })` 等价。
-
-Example: | 例子：
-
-```lua
-local Fragment = acandy.Fragment
-local frag = Fragment {
-   a.p 'First paragraph.',
-   a.p 'Second paragraph.',
-}
-frag:insert(a.p('Third paragraph.'))
-print(frag)
-```
-
-```html
-<p>First paragraph.</p>
-<p>Second paragraph.</p>
-<p>Third paragraph.</p>
-```
-
-### `acandy.Raw`
-
-`Raw` prevents strings from being escaped in the final output. It accepts any type of value, calls `tostring`, and stores it internally.  
-`Raw` 用于使字符串在最终不被转义。它接收任意类型的值，并调用 `tostring`，存储于内部。
-
-- It has `__tostring` set, so you can get the corresponding string with `tostring`;  
-  设置了 `__tostring`，可以通过 `tostring` 得到对应字符串；
-- It has `__concat` set, so you can concatenate two objects obtained by `Raw` with `..`.  
-  设置了 `__concat`，可以通过 `..` 连接两个由 `Raw` 得到的对象。
-
-Example: | 例子：
-
-```lua
-local Raw = acandy.Raw
-local elem = a.ul {
-   a.li 'foo <br> bar',
-   a.li(Raw 'foo <br> bar'),
-   a.li(Raw('foo <b')..Raw('r> bar')),
-   a.li { Raw('foo <b'), Raw('r> bar') },
-}
-```
-
-```html
-<ul>
-   <li>foo &lt;br&gt; bar</li>
-   <li>foo <br> bar</li>
-   <li>foo <br> bar</li>
-   <li>foo <br> bar</li>
-</ul>
-```
-
 ### `acandy.some`
 
 ```lua
@@ -473,6 +399,101 @@ print(elem)
    <li>item 2</li>
    <li>item 3</li>
 </ul>
+```
+
+## Node constructors | 结点构造器
+
+### `acandy.Fragment`
+
+`Fragment` holds multiple elements. The only differences between `Fragment` and a regular table are:  
+`Fragment` 承载多个元素。`Fragment` 和普通表的仅有的区别就是：
+
+- It has `__tostring` set, so you can get the HTML string;  
+  设置了 `__tostring`，可以得到 HTML 字符串；
+- It has `__index` set, so you can call all methods in the `table` library which take a table as the first parameter (e.g., `table.insert`, `table.remove`) in an object-oriented manner.  
+  设置了 `__index`，可以以类似面向对象的形式调用 `table.insert`、`table.remove` 等 `table` 库中所有以表为第一个参数的方法。
+
+You can create an empty Fragment with `Fragment()` or `Fragment({})`.  
+可以通过 `Fragment()` 或 `Fragment({})` 创建一个空的 Fragment。
+
+When there is only one element, `Fragment(<child>)` is equivalent to `Fragment({ <child> })`.  
+当仅有一个元素时，`Fragment(<child>)` 与 `Fragment({ <child> })` 等价。
+
+Example: | 例子：
+
+```lua
+local Fragment = acandy.Fragment
+local frag = Fragment {
+   a.p 'First paragraph.',
+   a.p 'Second paragraph.',
+}
+frag:insert(a.p('Third paragraph.'))
+print(frag)
+```
+
+```html
+<p>First paragraph.</p>
+<p>Second paragraph.</p>
+<p>Third paragraph.</p>
+```
+
+### `acandy.Raw`
+
+`Raw` prevents strings from being escaped in the final output. It accepts any type of value, calls `tostring`, and stores it internally.  
+`Raw` 用于使字符串在最终不被转义。它接收任意类型的值，并调用 `tostring`，存储于内部。
+
+- It has `__tostring` set, so you can get the corresponding string with `tostring`;  
+  设置了 `__tostring`，可以通过 `tostring` 得到对应字符串；
+- It has `__concat` set, so you can concatenate two objects obtained by `Raw` with `..`.  
+  设置了 `__concat`，可以通过 `..` 连接两个由 `Raw` 得到的对象。
+
+Example: | 例子：
+
+```lua
+local Raw = acandy.Raw
+local elem = a.ul {
+   a.li 'foo <br> bar',
+   a.li(Raw 'foo <br> bar'),
+   a.li(Raw('foo <b')..Raw('r> bar')),
+   a.li { Raw('foo <b'), Raw('r> bar') },
+}
+```
+
+```html
+<ul>
+   <li>foo &lt;br&gt; bar</li>
+   <li>foo <br> bar</li>
+   <li>foo <br> bar</li>
+   <li>foo <br> bar</li>
+</ul>
+```
+
+### `acandy.Comment`
+
+`Comment` creates a comment node.  
+`Comment` 创建一个注释结点。
+
+```lua
+local elem = a.p {
+   'Hello, ',
+   acandy.Comment 'This is a comment.',
+   'world!',
+   acandy.Comment(),
+}
+print(elem)
+```
+
+```html
+<p>Hello, <!--This is a comment.-->world!<!----></p>
+```
+
+### `acandy.Doctype`
+
+Currently only the HTML5 doctype is supported. It is accessed by `DocType.HTML`.  
+目前仅支持 HTML5 的 doctype，通过 `Doctype.HTML` 获取。
+
+```lua
+tostring(acandy.Doctype.HTML)  --> '<!DOCTYPE html>'
 ```
 
 ## Environmental methods | 环境方法
