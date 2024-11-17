@@ -1,6 +1,6 @@
 local config = {}
 
--- ref: https://html.spec.whatwg.org/multipage/syntax.html#elements-2
+-- ref: https://html.spec.whatwg.org/#elements-2
 
 config.HTML_ELEMS = {}  ---@type table<string, true>
 do

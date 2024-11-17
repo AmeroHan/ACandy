@@ -7,8 +7,8 @@ local classes = {}
 ---@class Doctype
 -- Specs:
 --   HTML:
---     define: https://html.spec.whatwg.org/multipage/syntax.html#the-doctype
---     serialize: https://html.spec.whatwg.org/multipage/parsing.html#serialising-html-fragments
+--     defination: https://html.spec.whatwg.org/#the-doctype
+--     serializion: https://html.spec.whatwg.org/#serialising-html-fragments
 --   XML: https://www.w3.org/TR/xml/#sec-prolog-dtd
 -- TODO: support any doctype
 

@@ -335,7 +335,7 @@ local function new_built_elem_from_props(self, props_or_child)
 			-- set attributes
 			for k, v in pairs(props_or_child) do
 				if type(k) == 'string' then
-					if not utils.is_valid_xml_name(k) then
+					if not utils.is_html_attr_name(k) then
 						error('invalid attribute name: '..k, 2)
 					end
 					new_attr_map[k] = v;
@@ -352,7 +352,7 @@ local function new_built_elem_from_props(self, props_or_child)
 			if type(k) == 'number' then
 				new_children[k] = v;
 			elseif type(k) == 'string' then
-				if not utils.is_valid_xml_name(k) then
+				if not utils.is_html_attr_name(k) then
 					error('invalid attribute name: '..k, 2)
 				end
 				new_attr_map[k] = v;
@@ -373,7 +373,7 @@ end
 local function set_elem_prop(self, key, val)
 	if key == 'tag_name' then
 		-- e.g. elem.tag_name = 'div'
-		if not utils.is_valid_xml_name(val) then
+		if not utils.is_html_tag_name(val) then
 			error('invalid tag name: '..val, 2)
 		end
 
@@ -397,7 +397,7 @@ local function set_elem_prop(self, key, val)
 		error('attempt to replace the '..key..' table of the element')
 	elseif type(key) == 'string' then
 		-- e.g. elem.class = 'content'
-		if not utils.is_valid_xml_name(key) then
+		if not utils.is_html_attr_name(key) then
 			error('invalid attribute name: '..key, 2)
 		end
 		self[SYM_ATTR_MAP][key] = val
@@ -618,7 +618,7 @@ local a = setmt({}, {
 	---@param key string
 	---@return BareElement
 	__index = function (self, key)
-		if not utils.is_valid_xml_name(key) then
+		if not utils.is_html_tag_name(key) then
 			error('invalid tag name: '..tostring(key), 2)
 		end
 
