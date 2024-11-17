@@ -1,6 +1,6 @@
 ---@diagnostic disable: undefined-field
 
-local utils = require('.test_utils')
+local utils = require('tests.test_utils')
 local acandy = require('acandy')
 local a, some, Fragment = acandy.a, acandy.some, acandy.Fragment
 local match_html = utils.match_html
