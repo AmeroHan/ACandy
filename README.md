@@ -106,11 +106,13 @@ Attributes are provided to elements through key-value pairs in the table. The ke
 
 ### Children
 
-Child nodes are provided to elements through the sequence part of the table. Any value other than `nil` can be a child node.
+Child nodes are provided to elements through the sequence part of the table. Any value other than `nil` can be a child node. When serializing, they follow the following rules.
 
-#### Elements, strings, numbers, booleans, and other values not mentioned later
+#### Default case
 
-When the element is stringified, these values will be attempted to `tostring` and escape `< > &`. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
+Elements, strings, numbers, booleans, and all other values not mentioned later are applicable to the following rules.
+
+When serializing, these values will be attempted to `tostring` and escape `< > &`. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
 
 In the following example, we use three elements (`<p>`) as child nodes of `<article>`, and use strings, numbers, and booleans as elements of `<p>`. It is trivial to guess the result.
 
@@ -131,22 +133,18 @@ print(elem)
 </article>
 ```
 
-#### Tables
+#### Lists
 
-When the element is stringified, tables may be treated as sequences, and ACandy will recursively attempt to stringify the elements in the sequence.
+When serializing, if a node is [list-like](#list-like-values), ACandy will recursively serialize the child nodes inside it.
 
-The following tables are treated as sequences:
+By the way, tables returned by [`acandy.Fragment`](#acandyfragment) (e.g., `Fragment { 1, 2, 3 }`) are list-like, as their metatable has the `'__acandy_list_like'` field set to `true`.
 
-- Tables without metatables, e.g., `{ 1, 2, 3 }`;
-- Tables returned by [`acandy.Fragment`](#acandyfragment), e.g., `Fragment { 1, 2, 3 }`;
-- Tables with the `'__acandy_fragment_like'` field in the metatable set to `true`, i.e., you can make <code>*val*</code> be treated as a sequence when stringified by setting <code>getmetatable(*val*).__acandy_fragment_like = true</code>.
-
-Other tables (e.g., tables returned by `a.p { 1, 2, 3 }`) will be directly converted to strings by `tostring`, so make sure `__tostring` is defined.
+Particularly, if a node has a table type but not considered list-like (e.g., table returned by `a.p { 1, 2, 3 }`), it will be directly converted to string according to the [default rule](#default-case), so make sure `__tostring` metamethod is implemented.
 
 ```lua
-local sequence1 = { '3', '4' }
-local sequence2 = { '2', sequence1 }
-local elem = a.div { '1', sequence2 }
+local list1 = { '3', '4' }
+local list2 = { '2', list1 }
+local elem = a.div { '1', list2 }
 print(elem)
 ```
 
@@ -162,14 +160,14 @@ Functions can be used as child nodes, which is equivalent to calling the functio
 local elem = a.ul {
    a.li 'item 1',
    a.li {
-      function ()  -- function returning string
+      function ()  -- returns string
          return 'item 2'
       end,
-   }
-   function ()  -- function returning element
+   },
+   function ()  -- returns element
       return a.li 'item 3'
    end,
-   function ()  -- function returning sequence
+   function ()  -- returns list
       local list = {}
       for i = 4, 6 do
          list[#list+1] = a.li('item '..i)
@@ -205,7 +203,7 @@ local elem = a.div['#my-id my-class-1 my-class-2'] {
 print(elem)
 ```
 
-Placing a table in brackets can set element attributes, not limited to `id` and `class`. This makes reusing attributes more convenient.
+Placing a [table-like value](#table-like-values) in brackets can set element attributes, not limited to `id` and `class`. This makes reusing attributes more convenient.
 
 ```lua
 local attr = {
@@ -229,32 +227,36 @@ Both of the above code snippets output:
 ### Slash syntax (breadcrumbs)
 
 ```lua
-local syntax = <elem1> / <elem2> / <elem3>
-local example = a.main / a.div / a.p { ... }
+elem1 / elem2 / ... / elemN / tail_value
 ```
 
 is equivalent to:
 
 ```lua
-local syntax = <elem1> { <elem2> { <elem3> } }
-local example = (
-   a.main {
-      a.div {
-         a.p { ... }
-      }
-   }
+elem1(
+   elem2(
+      ...(
+         elemN(tail_value)
+      )
+   )
 )
 ```
 
-The premise is that `elem1`, `elem2` are not [void elements](https://developer.mozilla.org/docs/Glossary/Void_element) (e.g., `<br>`) or [constructed elements](#element-instance-properties--元素实例属性).
+Kind of like CSS’s [childe combinator](https://developer.mozilla.org/docs/Web/CSS/Child_combinator) `>`, except that it is used to compose elements rather than select elements.
+
+The premise is that `elem1`..`elemN` are not [void elements](https://developer.mozilla.org/docs/Glossary/Void_element) or [constructed elements](#element-instance-properties).
+
+Example:
 
 ```lua
 local link_item = a.li / a.a
+local text = 'More coming soon...'
 local elem = (
    a.header['site-header'] / a.nav / a.ul {
       link_item { href="/home", 'Home' },
       link_item { href="/posts", 'Posts' },
       link_item { href="/about", 'About' },
+      a.li / text,
    }
 )
 print(elem)
@@ -264,15 +266,10 @@ print(elem)
 <header class="site-header">
    <nav>
       <ul>
-         <li>
-            <a href="/home">Home</a>
-         </li>
-         <li>
-            <a href="/posts">Posts</a>
-         </li>
-         <li>
-            <a href="/about">About</a>
-         </li>
+         <li><a href="/home">Home</a></li>
+         <li><a href="/posts">Posts</a></li>
+         <li><a href="/about">About</a></li>
+         <li>More coming soon...</li>
       </ul>
    </nav>
 </header>
@@ -329,11 +326,11 @@ If an element is obtained by calling functions like `a.div(...)`, `a.div[...](..
 
 A constructed element `elem` has the following properties:
 
-- `elem.tag_name`: The tag name of the element, reassignable.
-- `elem.attributes`: A table that stores all the attributes of the element, changes to this table will take effect on the element itself; cannot be reassigned.
-- `elem.children`: A [Fragment](#acandyfragment) that stores all the child nodes of the element, changes to this table will take effect on the element itself; cannot be reassigned.
-- <code>elem.*some_attribute*</code> (<code>*some_attribute*</code> is a string): Equivalent to <code>elem.attributes.*some_attribute*</code>.
-- <code>elem[*n*]</code> (<code>*n*</code> is an integer): Equivalent to <code>elem.children[*n*]</code>.
+- `elem.tag_name`: the tag name of the element, reassignable.
+- `elem.attributes`: a table that stores all the attributes of the element, changes to this table will take effect on the element itself; cannot be reassigned.
+- `elem.children`: a [`Fragment`](#acandyfragment) that stores all the child nodes of the element, changes to this table will take effect on the element itself; cannot be reassigned.
+- <code>elem.*some_attribute*</code> (<code>*some_attribute*</code> is a string): equivalent to <code>elem.attributes.*some_attribute*</code>.
+- <code>elem[*n*]</code> (<code>*n*</code> is an integer): equivalent to <code>elem.children[*n*]</code>.
 
 Example:
 
@@ -559,6 +556,36 @@ print(get_article())
    </main>
 </article>
 ```
+
+## Concepts
+
+### Table-like values
+
+Table-like values are values that can be read as tables.
+
+A value `t` is considered a table-like value if and only if it satisfies the following conditions:
+
+- Any of the following:
+  - `t` is a table and has no metatable.
+  - The `'__acandy_table_like'` field of `t`’s metatable is `true` (can be set by `getmetatable(t).__acandy_table_like = true`). The user needs to ensure that `t` can:
+    - read content through `t[k]`;
+    - get the sequence length through `#t`;
+    - traverse keys and values through `pairs(t)` and `ipairs(t)`.
+    ACandy only checks the metatable’s `'__acandy_table_like'` field and does not check whether `t` meets the above conditions.
+
+### List-like values
+
+List-like values are values that can be read as sequences.
+
+A value `t` is considered a list-like value if and only if it satisfies the following conditions:
+
+- Any of the following:
+  - `t` is a [table-like value](#table-like-values).
+  - The `'__acandy_list_like'` field of `t`’s metatable is `true` (can be set by `getmetatable(t).__acandy_list_like = true`). The user needs to ensure that `t` can:
+    - read content through `t[k]`;
+    - get the sequence length through `#t`;
+    - traverse values through `ipairs(t)`.
+    ACandy only checks the metatable’s `'__acandy_list_like'` field and does not check whether `t` meets the above conditions.
 
 ## Contribute
 

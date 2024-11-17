@@ -104,9 +104,11 @@ print(elem)
 
 ### 子结点
 
-通过表的序列部分为元素提供子结点。除 `nil` 之外的值均可作为子结点。
+通过表的序列部分为元素提供子结点。除 `nil` 之外的值均可作为子结点。当序列化时，它们遵循以下规则。
 
-#### 元素、字符串、数字、布尔值等后文没有提到的值
+#### 默认情形
+
+元素、字符串、数字、布尔值等后文没有提到的值均适用于以下规则。
 
 在元素字符串化时，对这些值尝试 `tostring`，并转义其中的 `< > &`。如果不期望自动的转义，可以将内容放在 [`acandy.Raw`](#acandyraw) 中。
 
@@ -129,22 +131,18 @@ print(elem)
 </article>
 ```
 
-#### 表
+#### 列表
 
-在元素字符串化时，表可能被当作序列，ACandy 会递归地对序列中的元素尝试字符串化。
+在序列化时，如果一个结点是[类列表的](#类列表值)，ACandy 将递归序列化列表中的子结点。
 
-以下表将被视为序列：
+顺便一提，由 [`acandy.Fragment`](#acandyfragment) 返回的表（如 `Fragment { 1, 2, 3 }`）是类列表的，因为它们的元表的 `'__acandy_list_like'` 字段被设置为 `true`。
 
-- 未设置元表的表，如 `{ 1, 2, 3 }`；
-- 由 [`acandy.Fragment`](#acandyfragment) 返回的表，如 `Fragment { 1, 2, 3 }`；
-- 元表的 `'__acandy_fragment_like'` 字段为 `true` 的表，即，可通过 <code>getmetatable(*val*).__acandy_fragment_like = true</code> 使 <code>*val*</code> 在字符串化时被视作序列。
-
-除此之外的表（如 `a.p { 1, 2, 3 }` 返回的表）会直接通过 `tostring` 转换为字符串，所以需要确保定义了 `__tostring`。
+特别地，如果一个表不被认为是类列表的，如 `a.p { 1, 2, 3 }` 返回的表，根据[默认规则](默认情形)，它将直接通过 `tostring` 转换为字符串，所以确保它实现了 `__tostring` 元方法。
 
 ```lua
-local sequence1 = { '3', '4' }
-local sequence2 = { '2', sequence1 }
-local elem = a.div { '1', sequence2 }
+local list1 = { '3', '4' }
+local list2 = { '2', list1 }
+local elem = a.div { '1', list2 }
 print(elem)
 ```
 
@@ -160,14 +158,14 @@ print(elem)
 local elem = a.ul {
    a.li 'item 1',
    a.li {
-      function ()  -- function returning string
+      function ()  -- returns string
          return 'item 2'
       end,
-   }
-   function ()  -- function returning element
+   },
+   function ()  -- returns element
       return a.li 'item 3'
    end,
-   function ()  -- function returning sequence
+   function ()  -- returns list
       local list = {}
       for i = 4, 6 do
          list[#list+1] = a.li('item '..i)
@@ -203,7 +201,7 @@ local elem = a.div['#my-id my-class-1 my-class-2'] {
 print(elem)
 ```
 
-在方括号内放置表可以设置元素属性，不局限于 `id` 和 `class`。这让复用属性变得更方便。
+在方括号内放置[类表值](#类表值)可以设置元素属性，属性不局限于 `id` 和 `class`。这让复用属性变得更方便。
 
 ```lua
 local attr = {
@@ -227,32 +225,36 @@ print(elem)
 ### 斜杠语法（面包屑）
 
 ```lua
-local syntax = <elem1> / <elem2> / <elem3>
-local example = a.main / a.div / a.p { ... }
+elem1 / elem2 / ... / elemN / tail_value
 ```
 
 相当于：
 
 ```lua
-local syntax = <elem1> { <elem2> { <elem3> } }
-local example = (
-   a.main {
-      a.div {
-         a.p { ... }
-      }
-   }
+elem1(
+   elem2(
+      ...(
+         elemN(tail_value)
+      )
+   )
 )
 ```
 
-前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)（如 `<br>`）或[已构建元素](#element-instance-properties--元素实例属性)。
+有点像 CSS 的[子组合器](https://developer.mozilla.org/docs/Web/CSS/Child_combinator) `>`，只不过它用于创建元素而不是选择元素。
+
+前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)或[已构建元素](#元素实例属性)。
+
+例子：
 
 ```lua
 local link_item = a.li / a.a
+local text = 'More coming soon...'
 local elem = (
    a.header['site-header'] / a.nav / a.ul {
       link_item { href="/home", 'Home' },
       link_item { href="/posts", 'Posts' },
       link_item { href="/about", 'About' },
+      a.li / text,
    }
 )
 print(elem)
@@ -262,15 +264,10 @@ print(elem)
 <header class="site-header">
    <nav>
       <ul>
-         <li>
-            <a href="/home">Home</a>
-         </li>
-         <li>
-            <a href="/posts">Posts</a>
-         </li>
-         <li>
-            <a href="/about">About</a>
-         </li>
+         <li><a href="/home">Home</a></li>
+         <li><a href="/posts">Posts</a></li>
+         <li><a href="/about">About</a></li>
+         <li>More coming soon...</li>
       </ul>
    </nav>
 </header>
@@ -329,7 +326,7 @@ print(items)
 
 - `elem.tag_name`：元素的标签名，可以重新赋值。
 - `elem.attributes`：一个表，存储着元素的所有属性，对此表的更改会生效于元素本身；不可重新赋值。
-- `elem.children`：一个 [Fragment](#acandyfragment)，存储着元素的所有子结点，对此表的更改会生效于元素本身；不可重新赋值。
+- `elem.children`：一个 [`Fragment`](#acandyfragment)，存储着元素的所有子结点，对此表的更改会生效于元素本身；不可重新赋值。
 - <code>elem.*some_attribute*</code>（<code>*some_attribute*</code> 为字符串）：相当于 <code>elem.attributes.*some_attribute*</code>。
 - <code>elem[*n*]</code>（<code>*n*</code> 为整数）：相当于 <code>elem.children[*n*]</code>。
 
@@ -557,6 +554,36 @@ print(get_article())
    </main>
 </article>
 ```
+
+## 概念
+
+### 类表值
+
+类表（table-like）值是指可以当作表来读取的值。
+
+当且仅当一个值 `t` 符合以下条件时，该值被认为是类表值：
+
+- 满足任意一条：
+  - `t` 是一个表，且未设置元表。
+  - `t` 的元表的 `'__acandy_table_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_table_like = true` 设置）。使用者需要确保 `t` 能够：
+    - 通过 `t[k]` 读取内容；
+    - 通过 `#t` 获取序列长度；
+    - 通过 `pairs(t)` 和 `ipairs(t)` 遍历键值。
+    ACandy 仅检查元表 `'__acandy_table_like'` 字段，不会检查 `t` 是否满足上述条件。
+
+### 类列表值
+
+类列表（list-like）值是指可以当作序列来读取的值。
+
+当且仅当一个值 `t` 符合以下条件时，该值被认为是类列表值：
+
+- 满足任意一条：
+  - `t` 是一个[类表值](#类表值)。
+  - `t` 的元表的 `'__acandy_list_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_table_like = true` 设置）。使用者需要确保 `t` 能够：
+    - 通过 `t[k]` 读取内容；
+    - 通过 `#t` 获取序列长度；
+    - 通过 `ipairs(t)` 遍历值。
+    ACandy 仅检查元表 `'__acandy_list_like'` 字段，不会检查 `t` 是否满足上述条件。
 
 ## 贡献
 

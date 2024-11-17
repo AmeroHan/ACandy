@@ -37,7 +37,7 @@ local SYM_CHILDREN = {}  ---@type Symbol
 local SYM_TAG_NAME = {}  ---@type Symbol
 
 local KEY_LIST_LIKE = '__acandy_list_like'
-local KEY_DATA_TABLE_LIKE = '__acandy_data_table_like'
+local KEY_TABLE_LIKE = '__acandy_table_like'
 
 ---@param v any
 ---@return integer @ 1: list-like, 2: data-table-like, 0: others
@@ -46,7 +46,7 @@ local function get_container_level(v)
 	if not mt then
 		return type(v) == 'table' and 2 or 0
 	end
-	if mt[KEY_DATA_TABLE_LIKE] == true then
+	if mt[KEY_TABLE_LIKE] == true then
 		return 2
 	elseif mt[KEY_LIST_LIKE] == true then
 		return 1

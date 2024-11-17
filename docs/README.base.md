@@ -126,12 +126,15 @@ Attributes are provided to elements through key-value pairs in the table. The ke
 
 ### Children | 子结点
 
-Child nodes are provided to elements through the sequence part of the table. Any value other than `nil` can be a child node.  
-通过表的序列部分为元素提供子结点。除 `nil` 之外的值均可作为子结点。
+Child nodes are provided to elements through the sequence part of the table. Any value other than `nil` can be a child node. When serializing, they follow the following rules.  
+通过表的序列部分为元素提供子结点。除 `nil` 之外的值均可作为子结点。当序列化时，它们遵循以下规则。
 
-#### Elements, strings, numbers, booleans, and other values not mentioned later | 元素、字符串、数字、布尔值等后文没有提到的值
+#### Default case | 默认情形
 
-When the element is stringified, these values will be attempted to `tostring` and escape `< > &`. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).  
+Elements, strings, numbers, booleans, and all other values not mentioned later are applicable to the following rules.  
+元素、字符串、数字、布尔值等后文没有提到的值均适用于以下规则。
+
+When serializing, these values will be attempted to `tostring` and escape `< > &`. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).  
 在元素字符串化时，对这些值尝试 `tostring`，并转义其中的 `< > &`。如果不期望自动的转义，可以将内容放在 [`acandy.Raw`](#acandyraw) 中。
 
 In the following example, we use three elements (`<p>`) as child nodes of `<article>`, and use strings, numbers, and booleans as elements of `<p>`. It is trivial to guess the result.  
@@ -154,31 +157,21 @@ print(elem)
 </article>
 ```
 
-#### Tables | 表
+#### Lists | 列表
 
-When the element is stringified, tables may be treated as sequences, and ACandy will recursively attempt to stringify the elements in the sequence.  
-在元素字符串化时，表可能被当作序列，ACandy 会递归地对序列中的元素尝试字符串化。
+When serializing, if a node is [list-like](#list-like-values), ACandy will recursively serialize the child nodes inside it.  
+在序列化时，如果一个结点是[类列表的](#类列表值)，ACandy 将递归序列化列表中的子结点。
 
-The following tables are treated as sequences:  
-以下表将被视为序列：
+By the way, tables returned by [`acandy.Fragment`](#acandyfragment) (e.g., `Fragment { 1, 2, 3 }`) are list-like, as their metatable has the `'__acandy_list_like'` field set to `true`.  
+顺便一提，由 [`acandy.Fragment`](#acandyfragment) 返回的表（如 `Fragment { 1, 2, 3 }`）是类列表的，因为它们的元表的 `'__acandy_list_like'` 字段被设置为 `true`。
 
-<!--@en-->
-- Tables without metatables, e.g., `{ 1, 2, 3 }`;
-- Tables returned by [`acandy.Fragment`](#acandyfragment), e.g., `Fragment { 1, 2, 3 }`;
-- Tables with the `'__acandy_fragment_like'` field in the metatable set to `true`, i.e., you can make <code>*val*</code> be treated as a sequence when stringified by setting <code>getmetatable(*val*).__acandy_fragment_like = true</code>.
-
-<!--@zh-Hans-->
-- 未设置元表的表，如 `{ 1, 2, 3 }`；
-- 由 [`acandy.Fragment`](#acandyfragment) 返回的表，如 `Fragment { 1, 2, 3 }`；
-- 元表的 `'__acandy_fragment_like'` 字段为 `true` 的表，即，可通过 <code>getmetatable(*val*).__acandy_fragment_like = true</code> 使 <code>*val*</code> 在字符串化时被视作序列。
-
-Other tables (e.g., tables returned by `a.p { 1, 2, 3 }`) will be directly converted to strings by `tostring`, so make sure `__tostring` is defined.  
-除此之外的表（如 `a.p { 1, 2, 3 }` 返回的表）会直接通过 `tostring` 转换为字符串，所以需要确保定义了 `__tostring`。
+Particularly, if a node has a table type but not considered list-like (e.g., table returned by `a.p { 1, 2, 3 }`), it will be directly converted to string according to the [default rule](#default-case), so make sure `__tostring` metamethod is implemented.  
+特别地，如果一个表不被认为是类列表的，如 `a.p { 1, 2, 3 }` 返回的表，根据[默认规则](默认情形)，它将直接通过 `tostring` 转换为字符串，所以确保它实现了 `__tostring` 元方法。
 
 ```lua
-local sequence1 = { '3', '4' }
-local sequence2 = { '2', sequence1 }
-local elem = a.div { '1', sequence2 }
+local list1 = { '3', '4' }
+local list2 = { '2', list1 }
+local elem = a.div { '1', list2 }
 print(elem)
 ```
 
@@ -195,14 +188,14 @@ Functions can be used as child nodes, which is equivalent to calling the functio
 local elem = a.ul {
    a.li 'item 1',
    a.li {
-      function ()  -- function returning string
+      function ()  -- returns string
          return 'item 2'
       end,
-   }
-   function ()  -- function returning element
+   },
+   function ()  -- returns element
       return a.li 'item 3'
    end,
-   function ()  -- function returning sequence
+   function ()  -- returns list
       local list = {}
       for i = 4, 6 do
          list[#list+1] = a.li('item '..i)
@@ -240,8 +233,8 @@ local elem = a.div['#my-id my-class-1 my-class-2'] {
 print(elem)
 ```
 
-Placing a table in brackets can set element attributes, not limited to `id` and `class`. This makes reusing attributes more convenient.  
-在方括号内放置表可以设置元素属性，不局限于 `id` 和 `class`。这让复用属性变得更方便。
+Placing a [table-like value](#table-like-values) in brackets can set element attributes, not limited to `id` and `class`. This makes reusing attributes more convenient.  
+在方括号内放置[类表值](#类表值)可以设置元素属性，属性不局限于 `id` 和 `class`。这让复用属性变得更方便。
 
 ```lua
 local attr = {
@@ -266,34 +259,39 @@ Both of the above code snippets output:
 ### Slash syntax (breadcrumbs) | 斜杠语法（面包屑）
 
 ```lua
-local syntax = <elem1> / <elem2> / <elem3>
-local example = a.main / a.div / a.p { ... }
+elem1 / elem2 / ... / elemN / tail_value
 ```
 
 is equivalent to:  
 相当于：
 
 ```lua
-local syntax = <elem1> { <elem2> { <elem3> } }
-local example = (
-   a.main {
-      a.div {
-         a.p { ... }
-      }
-   }
+elem1(
+   elem2(
+      ...(
+         elemN(tail_value)
+      )
+   )
 )
 ```
 
-The premise is that `elem1`, `elem2` are not [void elements](https://developer.mozilla.org/docs/Glossary/Void_element) (e.g., `<br>`) or [constructed elements](#element-instance-properties--元素实例属性).  
-前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)（如 `<br>`）或[已构建元素](#element-instance-properties--元素实例属性)。
+Kind of like CSS’s [childe combinator](https://developer.mozilla.org/docs/Web/CSS/Child_combinator) `>`, except that it is used to compose elements rather than select elements.  
+有点像 CSS 的[子组合器](https://developer.mozilla.org/docs/Web/CSS/Child_combinator) `>`，只不过它用于创建元素而不是选择元素。
+
+The premise is that `elem1`..`elemN` are not [void elements](https://developer.mozilla.org/docs/Glossary/Void_element) or [constructed elements](#element-instance-properties).  
+前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)或[已构建元素](#元素实例属性)。
+
+Example: | 例子：
 
 ```lua
 local link_item = a.li / a.a
+local text = 'More coming soon...'
 local elem = (
    a.header['site-header'] / a.nav / a.ul {
       link_item { href="/home", 'Home' },
       link_item { href="/posts", 'Posts' },
       link_item { href="/about", 'About' },
+      a.li / text,
    }
 )
 print(elem)
@@ -303,15 +301,10 @@ print(elem)
 <header class="site-header">
    <nav>
       <ul>
-         <li>
-            <a href="/home">Home</a>
-         </li>
-         <li>
-            <a href="/posts">Posts</a>
-         </li>
-         <li>
-            <a href="/about">About</a>
-         </li>
+         <li><a href="/home">Home</a></li>
+         <li><a href="/posts">Posts</a></li>
+         <li><a href="/about">About</a></li>
+         <li>More coming soon...</li>
       </ul>
    </nav>
 </header>
@@ -373,16 +366,16 @@ A constructed element `elem` has the following properties:
 对于一个已构建的元素 `elem`，它有如下属性：
 
 <!--@en-->
-- `elem.tag_name`: The tag name of the element, reassignable.
-- `elem.attributes`: A table that stores all the attributes of the element, changes to this table will take effect on the element itself; cannot be reassigned.
-- `elem.children`: A [Fragment](#acandyfragment) that stores all the child nodes of the element, changes to this table will take effect on the element itself; cannot be reassigned.
-- <code>elem.*some_attribute*</code> (<code>*some_attribute*</code> is a string): Equivalent to <code>elem.attributes.*some_attribute*</code>.
-- <code>elem[*n*]</code> (<code>*n*</code> is an integer): Equivalent to <code>elem.children[*n*]</code>.
+- `elem.tag_name`: the tag name of the element, reassignable.
+- `elem.attributes`: a table that stores all the attributes of the element, changes to this table will take effect on the element itself; cannot be reassigned.
+- `elem.children`: a [`Fragment`](#acandyfragment) that stores all the child nodes of the element, changes to this table will take effect on the element itself; cannot be reassigned.
+- <code>elem.*some_attribute*</code> (<code>*some_attribute*</code> is a string): equivalent to <code>elem.attributes.*some_attribute*</code>.
+- <code>elem[*n*]</code> (<code>*n*</code> is an integer): equivalent to <code>elem.children[*n*]</code>.
 
 <!--@zh-Hans-->
 - `elem.tag_name`：元素的标签名，可以重新赋值。
 - `elem.attributes`：一个表，存储着元素的所有属性，对此表的更改会生效于元素本身；不可重新赋值。
-- `elem.children`：一个 [Fragment](#acandyfragment)，存储着元素的所有子结点，对此表的更改会生效于元素本身；不可重新赋值。
+- `elem.children`：一个 [`Fragment`](#acandyfragment)，存储着元素的所有子结点，对此表的更改会生效于元素本身；不可重新赋值。
 - <code>elem.*some_attribute*</code>（<code>*some_attribute*</code> 为字符串）：相当于 <code>elem.attributes.*some_attribute*</code>。
 - <code>elem[*n*]</code>（<code>*n*</code> 为整数）：相当于 <code>elem.children[*n*]</code>。
 
@@ -629,6 +622,60 @@ print(get_article())
    </main>
 </article>
 ```
+
+## Concepts | 概念
+
+### Table-like values | 类表值
+
+Table-like values are values that can be read as tables.  
+类表（table-like）值是指可以当作表来读取的值。
+
+A value `t` is considered a table-like value if and only if it satisfies the following conditions:  
+当且仅当一个值 `t` 符合以下条件时，该值被认为是类表值：
+
+<!--@en-->
+- Any of the following:
+  - `t` is a table and has no metatable.
+  - The `'__acandy_table_like'` field of `t`’s metatable is `true` (can be set by `getmetatable(t).__acandy_table_like = true`). The user needs to ensure that `t` can:
+    - read content through `t[k]`;
+    - get the sequence length through `#t`;
+    - traverse keys and values through `pairs(t)` and `ipairs(t)`.
+    ACandy only checks the metatable’s `'__acandy_table_like'` field and does not check whether `t` meets the above conditions.
+
+<!--@zh-Hans-->
+- 满足任意一条：
+  - `t` 是一个表，且未设置元表。
+  - `t` 的元表的 `'__acandy_table_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_table_like = true` 设置）。使用者需要确保 `t` 能够：
+    - 通过 `t[k]` 读取内容；
+    - 通过 `#t` 获取序列长度；
+    - 通过 `pairs(t)` 和 `ipairs(t)` 遍历键值。
+    ACandy 仅检查元表 `'__acandy_table_like'` 字段，不会检查 `t` 是否满足上述条件。
+
+### List-like values | 类列表值
+
+List-like values are values that can be read as sequences.  
+类列表（list-like）值是指可以当作序列来读取的值。
+
+A value `t` is considered a list-like value if and only if it satisfies the following conditions:  
+当且仅当一个值 `t` 符合以下条件时，该值被认为是类列表值：
+
+<!--@en-->
+- Any of the following:
+  - `t` is a [table-like value](#table-like-values).
+  - The `'__acandy_list_like'` field of `t`’s metatable is `true` (can be set by `getmetatable(t).__acandy_list_like = true`). The user needs to ensure that `t` can:
+    - read content through `t[k]`;
+    - get the sequence length through `#t`;
+    - traverse values through `ipairs(t)`.
+    ACandy only checks the metatable’s `'__acandy_list_like'` field and does not check whether `t` meets the above conditions.
+
+<!--@zh-Hans-->
+- 满足任意一条：
+  - `t` 是一个[类表值](#类表值)。
+  - `t` 的元表的 `'__acandy_list_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_table_like = true` 设置）。使用者需要确保 `t` 能够：
+    - 通过 `t[k]` 读取内容；
+    - 通过 `#t` 获取序列长度；
+    - 通过 `ipairs(t)` 遍历值。
+    ACandy 仅检查元表 `'__acandy_list_like'` 字段，不会检查 `t` 是否满足上述条件。
 
 ## Contribute | 贡献
 
