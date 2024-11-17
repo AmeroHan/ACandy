@@ -723,9 +723,10 @@ return {
 	a = a,
 	some = some,
 	-- classes
+	Comment = classes.Comment,
+	Doctype = classes.Doctype,
 	Fragment = Fragment,
 	Raw = classes.Raw,
-	Doctype = classes.Doctype,
 	-- functions
 	extend_env = extend_env,
 	to_extended_env = to_extended_env,
