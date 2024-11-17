@@ -1,8 +1,10 @@
-# ACandy: a sugary Lua module for building HTML | ACandy：甜的构建 HTML 的 Lua 模块
+# ACandy: a sugary Lua module for building HTML | ACandy：一个甜的构建 HTML 的 Lua 模块
 
-<p align="center">
-This work uses <a href="https://semver.org/">Semantic Versioning</a> | 本项目使用<a href="https://semver.org/lang/zh-CN/">语义化版本</a>
-</p>
+<div align="center">
+<!--@LanguageLinks-->
+
+<p>This work uses <a href="https://semver.org/">Semantic Versioning</a> | 本项目使用<a href="https://semver.org/lang/zh-CN/">语义化版本</a></p>
+</div>
 
 <!--@en-->
 ACandy is a pure Lua module for building HTML, which takes advantage of Lua’s syntactic sugar and metatable, giving an intuitive DSL to build HTML from Lua.
