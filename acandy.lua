@@ -40,13 +40,12 @@ local KEY_LIST_LIKE = '__acandy_list_like'
 local KEY_TABLE_LIKE = '__acandy_table_like'
 
 ---@param v any
----@return integer @ 1: list-like, 2: data-table-like, 0: others
-local function get_container_level(v)
+---@return integer @ 1: list-like, 2: table-like, 0: others
+local function container_level_of(v)
 	local mt = getmt(v)
 	if not mt then
 		return type(v) == 'table' and 2 or 0
-	end
-	if mt[KEY_TABLE_LIKE] == true then
+	elseif mt[KEY_TABLE_LIKE] == true then
 		return 2
 	elseif mt[KEY_LIST_LIKE] == true then
 		return 1
@@ -75,7 +74,7 @@ local function extend_strings_with_fragment(strs, frag, strs_len, no_encode)
 
 	local function append_serialized(node)
 		local node_type = type(node)
-		if get_container_level(node) >= 1 then  -- Fragment
+		if container_level_of(node) >= 1 then  -- Fragment
 			for _, child_node in ipairs(node) do
 				append_serialized(child_node)
 			end
@@ -122,8 +121,8 @@ Fragment_mt = {
 ---@param children any?
 ---@return Fragment
 local function Fragment(children)
-	if get_container_level(children) >= 1 then
-		return setmt(utils.shallow_icopy(children), Fragment_mt)
+	if container_level_of(children) >= 1 then
+		return setmt(utils.copy_ipairs(children), Fragment_mt)
 	end
 	return setmt({children}, Fragment_mt)
 end
@@ -327,9 +326,9 @@ end
 ---@return BuiltElement
 local function new_built_elem_from_props(self, props)
 	local tag_name = self[SYM_TAG_NAME]
-	local attr_map = rawget(self, SYM_ATTR_MAP) or {}
-	local new_attr_map = utils.shallow_copy(attr_map)
-	local container_level = get_container_level(props)
+	local base_attr_map = rawget(self, SYM_ATTR_MAP)
+	local new_attr_map = base_attr_map and utils.copy_pairs(base_attr_map) or {}
+	local container_level = container_level_of(props)
 
 	if VOID_ELEMS[tag_name] then  -- void element, e.g. <br>, <img>
 		if container_level == 2 then
@@ -360,7 +359,7 @@ local function new_built_elem_from_props(self, props)
 			end
 		end
 	elseif container_level == 1 then
-		utils.shallow_icopy(props, new_children)
+		utils.copy_ipairs(props, new_children)
 	else  -- treat as a single child
 		new_children[1] = props
 	end
@@ -426,7 +425,7 @@ local function new_building_elem_by_shorthand_attrs(self, attrs)
 	local attr_map
 	if type(attrs) == 'string' then
 		attr_map = utils.parse_shorthand_attrs(attrs)
-	elseif get_container_level(attrs) == 2 then
+	elseif container_level_of(attrs) == 2 then
 		attr_map = {}
 		for k, v in pairs(attrs) do
 			if type(k) == 'string' then
@@ -447,8 +446,8 @@ end
 ---@return Breadcrumb
 local function copy_breadcrumb(self)
 	local new_breadcrumb = {
-		[SYM_TAG_NAME] = utils.shallow_icopy(self[SYM_TAG_NAME]),
-		[SYM_ATTR_MAP] = utils.shallow_icopy(self[SYM_ATTR_MAP]),
+		[SYM_TAG_NAME] = utils.copy_ipairs(self[SYM_TAG_NAME]),
+		[SYM_ATTR_MAP] = utils.copy_ipairs(self[SYM_ATTR_MAP]),
 	}
 	return setmt(new_breadcrumb, Breadcrumb_mt)
 end

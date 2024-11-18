@@ -6,11 +6,23 @@ local s_gsub = string.gsub
 
 local utf8 = utf8 or require('.utf8_polyfill')
 
----Shallow copy a table.
+---Shallow copy a table's sequence part using `ipairs`.
+---@param from table
+---@param into table?
+---@return table
+function utils.copy_ipairs(from, into)
+	into = into or {}
+	for i, v in ipairs(from) do
+		into[i] = v
+	end
+	return into
+end
+
+---Shallow copy a table using `pairs`.
 ---@param from table
 ---@---@param into table?
 ---@return table
-function utils.shallow_copy(from, into)
+function utils.copy_pairs(from, into)
 	into = into or {}
 	for k, v in pairs(from) do
 		into[k] = v
@@ -18,7 +30,7 @@ function utils.shallow_copy(from, into)
 	return into
 end
 
----Shallow copy a table without calling `__pairs` metamethod
+---Shallow copy a table without calling `__pairs` metamethod.
 ---@param from table
 ---@param into table?
 ---@return table
@@ -26,18 +38,6 @@ function utils.raw_shallow_copy(from, into)
 	into = into or {}
 	for k, v in next, from do
 		into[k] = v
-	end
-	return into
-end
-
----Shallow copy a table's sequence part.
----@param from table
----@param into table?
----@return table
-function utils.shallow_icopy(from, into)
-	into = into or {}
-	for i, v in ipairs(from) do
-		into[i] = v
 	end
 	return into
 end
