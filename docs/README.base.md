@@ -1,9 +1,11 @@
 # ACandy: a sugary Lua module for building HTML | ACandy：一个甜的构建 HTML 的 Lua 模块
 
 <div align="center">
-<!--@LanguageLinks-->
+<!--@LanguageLinks;-->
 
-<p>This work uses <a href="https://semver.org/">Semantic Versioning</a> | 本项目使用<a href="https://semver.org/lang/zh-CN/">语义化版本</a></p>
+<p>
+This work uses <a href="https://semver.org/">Semantic Versioning</a> | 本项目使用<a href="https://semver.org/lang/zh-CN/">语义化版本</a>
+</p>
 </div>
 
 <!--@en-->
@@ -69,7 +71,7 @@ local a = acandy.a
 - `a` is short to type;
 - <code>a.*xxx*</code> can be understood as “a *xxx*” in English.
 
-<!--@zh-Hans-->
+<!--@zh-->
 - `a` 是 ACandy 的首字母；
 - `a` 很短，打起来方便；
 - <code>a.*xxx*</code> 可以理解为英语的“一个 *xxx*”。
@@ -98,11 +100,13 @@ The output of this code, formatted (the same below), is as follows.
 
 <!--@en-->
 > [!TIP]
+>
 > - You don’t need to handle HTML escaping in strings. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
 > - Child nodes do not have to be elements or strings—although only these two types are shown here, any value that can be `tostring` is capable of a child node.
 
-<!--@zh-Hans-->
+<!--@zh-->
 > [!TIP]
+>
 > - 你不需要在字符串中处理 HTML 转义。如果不期望自动的转义，可以将内容放在 [`acandy.Raw`](#acandyraw) 中。
 > - 子结点并不必须是元素或字符串——虽然这里只展示了这两类，一切能 `tostring` 的值均可作为子结点。
 
@@ -119,7 +123,7 @@ Attributes are provided to elements through key-value pairs in the table. The ke
 - `true` indicates a boolean attribute, e.g., `a.script { async=true }` means `<script async></script>`;
 - Other values will be converted to string by `tostring`, then escape `&`, `<`, `>` and NBSP inside it.
 
-<!--@zh-Hans-->
+<!--@zh-->
 - `nil` 和 `false` 表示没有此属性；
 - `true` 表示此为布尔值属性，例如，`a.script { async=true }` 表示 `<script async></script>`；
 - 其余值，将会对其进行 `tostring`，并转义其中的 `&`、`<`、`>` 和 NBSP。
@@ -218,6 +222,7 @@ print(elem)
 ```
 
 > [!TIP]
+>
 > Child nodes are processed recursively, so you can return functions within functions.  
 > 子结点是递归处理的，所以你可以在函数里返回函数。
 
@@ -311,6 +316,7 @@ print(elem)
 ```
 
 > [!TIP]
+>
 > breadcrumbs can be cached, just like `link_item` in the above example.  
 > 面包屑可以缓存，就像上面这个例子中的 `link_item`。
 
@@ -372,7 +378,7 @@ A constructed element `elem` has the following properties:
 - <code>elem.*some_attribute*</code> (<code>*some_attribute*</code> is a string): equivalent to <code>elem.attributes.*some_attribute*</code>.
 - <code>elem[*n*]</code> (<code>*n*</code> is an integer): equivalent to <code>elem.children[*n*]</code>.
 
-<!--@zh-Hans-->
+<!--@zh-->
 - `elem.tag_name`：元素的标签名，可以重新赋值。
 - `elem.attributes`：一个表，存储着元素的所有属性，对此表的更改会生效于元素本身；不可重新赋值。
 - `elem.children`：一个 [`Fragment`](#acandyfragment)，存储着元素的所有子结点，对此表的更改会生效于元素本身；不可重新赋值。
@@ -426,7 +432,7 @@ print(elem)
 - It has `__tostring` set, so you can get the HTML string;
 - It has `__index` set, so you can call all methods in the `table` library which take a table as the first parameter (e.g., `table.insert`, `table.remove`) in an object-oriented manner.
 
-<!--@zh-Hans-->
+<!--@zh-->
 - 设置了 `__tostring`，可以得到 HTML 字符串；
 - 设置了 `__index`，可以以类似面向对象的形式调用 `table.insert`、`table.remove` 等 `table` 库中所有以表为第一个参数的方法。
 
@@ -463,7 +469,7 @@ print(frag)
 - It has `__tostring` set, so you can get the corresponding string with `tostring`;
 - It has `__concat` set, so you can concatenate two objects obtained by `Raw` with `..`.
 
-<!--@zh-Hans-->
+<!--@zh-->
 - 设置了 `__tostring`，可以通过 `tostring` 得到对应字符串；
 - 设置了 `__concat`，可以通过 `..` 连接两个由 `Raw` 得到的对象。
 
@@ -528,6 +534,7 @@ Extend the environment in place with `acandy.a` as `__index`, e.g., `_ENV`. This
 使用 `acandy.a` 作为 `__index` 来扩展传入的环境，例如 `_ENV`。这使得能够直接使用元素名不需要显式地使用 `a.`，除非与局部变量或全局变量有命名冲突。
 
 > [!WARNING]
+>
 > It is not recommended to use this method on the global environment, as it may cause hard-to-detect naming conflicts.  
 > 不建议对全局环境使用此方法，因为可能会造成难以察觉的命名冲突。
 
@@ -635,20 +642,26 @@ A value `t` is considered a table-like value if and only if it satisfies the fol
 
 <!--@en-->
 - Any of the following:
+
   - `t` is a table and has no metatable.
   - The `'__acandy_table_like'` field of `t`’s metatable is `true` (can be set by `getmetatable(t).__acandy_table_like = true`). The user needs to ensure that `t` can:
+
     - read content through `t[k]`;
     - get the sequence length through `#t`;
     - traverse keys and values through `pairs(t)` and `ipairs(t)`.
+
     ACandy only checks the metatable’s `'__acandy_table_like'` field and does not check whether `t` meets the above conditions.
 
-<!--@zh-Hans-->
+<!--@zh-->
 - 满足任意一条：
+
   - `t` 是一个表，且未设置元表。
   - `t` 的元表的 `'__acandy_table_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_table_like = true` 设置）。使用者需要确保 `t` 能够：
+
     - 通过 `t[k]` 读取内容；
     - 通过 `#t` 获取序列长度；
     - 通过 `pairs(t)` 和 `ipairs(t)` 遍历键值。
+
     ACandy 仅检查元表 `'__acandy_table_like'` 字段，不会检查 `t` 是否满足上述条件。
 
 ### List-like values | 类列表值
@@ -661,20 +674,26 @@ A value `t` is considered a list-like value if and only if it satisfies the foll
 
 <!--@en-->
 - Any of the following:
+
   - `t` is a [table-like value](#table-like-values).
   - The `'__acandy_list_like'` field of `t`’s metatable is `true` (can be set by `getmetatable(t).__acandy_list_like = true`). The user needs to ensure that `t` can:
+
     - read content through `t[k]`;
     - get the sequence length through `#t`;
     - traverse values through `ipairs(t)`.
+
     ACandy only checks the metatable’s `'__acandy_list_like'` field and does not check whether `t` meets the above conditions.
 
-<!--@zh-Hans-->
+<!--@zh-->
 - 满足任意一条：
+
   - `t` 是一个[类表值](#类表值)。
   - `t` 的元表的 `'__acandy_list_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_table_like = true` 设置）。使用者需要确保 `t` 能够：
+
     - 通过 `t[k]` 读取内容；
     - 通过 `#t` 获取序列长度；
     - 通过 `ipairs(t)` 遍历值。
+
     ACandy 仅检查元表 `'__acandy_list_like'` 字段，不会检查 `t` 是否满足上述条件。
 
 ## Contribute | 贡献

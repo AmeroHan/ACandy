@@ -6,9 +6,11 @@ DO NOT edit it directly. Edit docs/README.base.md instead.
 # ACandy: a sugary Lua module for building HTML
 
 <div align="center">
-<p>🌏 <strong>English</strong> | <a href="./docs/README.zh.md">简体中文</a></p>
+<p>🌏 <strong>English</strong> | <a href="docs/README.zh.md">中文</a></p>
 
-<p>This work uses <a href="https://semver.org/">Semantic Versioning</a>
+<p>
+This work uses <a href="https://semver.org/">Semantic Versioning</a>
+</p>
 </div>
 
 ACandy is a pure Lua module for building HTML, which takes advantage of Lua’s syntactic sugar and metatable, giving an intuitive DSL to build HTML from Lua.
@@ -91,6 +93,7 @@ The output of this code, formatted (the same below), is as follows.
 ```
 
 > [!TIP]
+>
 > - You don’t need to handle HTML escaping in strings. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
 > - Child nodes do not have to be elements or strings—although only these two types are shown here, any value that can be `tostring` is capable of a child node.
 
@@ -190,6 +193,7 @@ print(elem)
 ```
 
 > [!TIP]
+>
 > Child nodes are processed recursively, so you can return functions within functions.
 
 ### Bracket syntax (setting element attributes)
@@ -276,6 +280,7 @@ print(elem)
 ```
 
 > [!TIP]
+>
 > breadcrumbs can be cached, just like `link_item` in the above example.
 
 ### `acandy.some`
@@ -464,6 +469,7 @@ function acandy.extend_env(env: table) -> nil
 Extend the environment in place with `acandy.a` as `__index`, e.g., `_ENV`. This makes it possible to directly use the tag name rather than tediously type `a.`, unless there is a naming conflict with local variables or global variables.
 
 > [!WARNING]
+>
 > It is not recommended to use this method on the global environment, as it may cause hard-to-detect naming conflicts.
 
 ```lua
@@ -566,11 +572,14 @@ Table-like values are values that can be read as tables.
 A value `t` is considered a table-like value if and only if it satisfies the following conditions:
 
 - Any of the following:
+
   - `t` is a table and has no metatable.
   - The `'__acandy_table_like'` field of `t`’s metatable is `true` (can be set by `getmetatable(t).__acandy_table_like = true`). The user needs to ensure that `t` can:
+
     - read content through `t[k]`;
     - get the sequence length through `#t`;
     - traverse keys and values through `pairs(t)` and `ipairs(t)`.
+
     ACandy only checks the metatable’s `'__acandy_table_like'` field and does not check whether `t` meets the above conditions.
 
 ### List-like values
@@ -580,11 +589,14 @@ List-like values are values that can be read as sequences.
 A value `t` is considered a list-like value if and only if it satisfies the following conditions:
 
 - Any of the following:
+
   - `t` is a [table-like value](#table-like-values).
   - The `'__acandy_list_like'` field of `t`’s metatable is `true` (can be set by `getmetatable(t).__acandy_list_like = true`). The user needs to ensure that `t` can:
+
     - read content through `t[k]`;
     - get the sequence length through `#t`;
     - traverse values through `ipairs(t)`.
+
     ACandy only checks the metatable’s `'__acandy_list_like'` field and does not check whether `t` meets the above conditions.
 
 ## Contribute
