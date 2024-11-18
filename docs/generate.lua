@@ -77,3 +77,5 @@ end
 
 write_into(EN_PATH, en_content)
 write_into(ZH_PATH, zh_content)
+
+print('Done.')

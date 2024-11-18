@@ -102,7 +102,7 @@ Attributes are provided to elements through key-value pairs in the table. The ke
 
 - `nil` and `false` indicate no such attribute;
 - `true` indicates a boolean attribute, e.g., `a.script { async=true }` means `<script async></script>`;
-- Other values will be `tostring` and escape `< > & "`.
+- Other values will be converted to string by `tostring`, then escape `&`, `<`, `>` and NBSP inside it.
 
 ### Children
 

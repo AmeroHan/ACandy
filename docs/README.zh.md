@@ -100,7 +100,7 @@ print(elem)
 
 - `nil` 和 `false` 表示没有此属性；
 - `true` 表示此为布尔值属性，例如，`a.script { async=true }` 表示 `<script async></script>`；
-- 其余值，将会对其进行 `tostring`，并转义其中的 `< > & "`。
+- 其余值，将会对其进行 `tostring`，并转义其中的 `&`、`<`、`>` 和 NBSP。
 
 ### 子结点
 

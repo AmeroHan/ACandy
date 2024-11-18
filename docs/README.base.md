@@ -117,12 +117,12 @@ Attributes are provided to elements through key-value pairs in the table. The ke
 <!--@en-->
 - `nil` and `false` indicate no such attribute;
 - `true` indicates a boolean attribute, e.g., `a.script { async=true }` means `<script async></script>`;
-- Other values will be `tostring` and escape `< > & "`.
+- Other values will be converted to string by `tostring`, then escape `&`, `<`, `>` and NBSP inside it.
 
 <!--@zh-Hans-->
 - `nil` 和 `false` 表示没有此属性；
 - `true` 表示此为布尔值属性，例如，`a.script { async=true }` 表示 `<script async></script>`；
-- 其余值，将会对其进行 `tostring`，并转义其中的 `< > & "`。
+- 其余值，将会对其进行 `tostring`，并转义其中的 `&`、`<`、`>` 和 NBSP。
 
 ### Children | 子结点
 
