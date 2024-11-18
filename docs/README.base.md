@@ -115,18 +115,18 @@ For HTML elements, <code>a.*xxx*</code> is case-**in**sensitive, so `a.div`, `a.
 
 ### Attributes | 属性
 
-Attributes are provided to elements through key-value pairs in the table. The keys must be [valid XML strings](https://www.w3.org/TR/xml/#NT-Name) (currently the module only supports ASCII characters); the values can be:  
-通过表的键值对为元素提供属性。其中，键必须是[合法的 XML 字符串](https://www.w3.org/TR/xml/#NT-Name)（目前模块仅支持 ASCII 字符）；值可以是以下内容：
+Attributes are provided to elements through key-value pairs in the table. The attribute values can be:  
+通过表的键值对为元素提供属性。值可以是以下内容：
 
 <!--@en-->
 - `nil` and `false` indicate no such attribute;
 - `true` indicates a boolean attribute, e.g., `a.script { async=true }` means `<script async></script>`;
-- Other values will be converted to string by `tostring`, then escape `&`, `<`, `>` and NBSP inside it.
+- for any other value, try `tostring` on it, then escape `&`, `<`, `>` and NBSP.
 
 <!--@zh-->
 - `nil` 和 `false` 表示没有此属性；
 - `true` 表示此为布尔值属性，例如，`a.script { async=true }` 表示 `<script async></script>`；
-- 其余值，将会对其进行 `tostring`，并转义其中的 `&`、`<`、`>` 和 NBSP。
+- 其余值，将会对其 `tostring`，并转义其中的 `&`、`<`、`>` 和 NBSP。
 
 ### Children | 子结点
 
@@ -138,8 +138,8 @@ Child nodes are provided to elements through the sequence part of the table. Any
 Elements, strings, numbers, booleans, and all other values not mentioned later are applicable to the following rules.  
 元素、字符串、数字、布尔值等后文没有提到的值均适用于以下规则。
 
-When serializing, these values will be attempted to `tostring` and escape `< > &`. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).  
-在元素字符串化时，对这些值尝试 `tostring`，并转义其中的 `< > &`。如果不期望自动的转义，可以将内容放在 [`acandy.Raw`](#acandyraw) 中。
+When serializing, `tostring` will be tried on these values and then escape `&`, `<`, `>` and NBSP. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).  
+在元素字符串化时，对这些值尝试 `tostring`，并转义 `&`、`<`、`>` 和 NBSP。如果不期望自动的转义，可以将内容放在 [`acandy.Raw`](#acandyraw) 中。
 
 In the following example, we use three elements (`<p>`) as child nodes of `<article>`, and use strings, numbers, and booleans as elements of `<p>`. It is trivial to guess the result.  
 在下面这个例子中，我们将三个元素（`<p>`）作为 `<article>` 的子结点，并分别将字符串、数字、布尔值作为 `<p>` 的元素。结果显而易见。

@@ -101,11 +101,11 @@ For HTML elements, <code>a.*xxx*</code> is case-**in**sensitive, so `a.div`, `a.
 
 ### Attributes
 
-Attributes are provided to elements through key-value pairs in the table. The keys must be [valid XML strings](https://www.w3.org/TR/xml/#NT-Name) (currently the module only supports ASCII characters); the values can be:
+Attributes are provided to elements through key-value pairs in the table. The attribute values can be:
 
 - `nil` and `false` indicate no such attribute;
 - `true` indicates a boolean attribute, e.g., `a.script { async=true }` means `<script async></script>`;
-- Other values will be converted to string by `tostring`, then escape `&`, `<`, `>` and NBSP inside it.
+- for any other value, try `tostring` on it, then escape `&`, `<`, `>` and NBSP.
 
 ### Children
 
@@ -115,7 +115,7 @@ Child nodes are provided to elements through the sequence part of the table. Any
 
 Elements, strings, numbers, booleans, and all other values not mentioned later are applicable to the following rules.
 
-When serializing, these values will be attempted to `tostring` and escape `< > &`. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
+When serializing, `tostring` will be tried on these values and then escape `&`, `<`, `>` and NBSP. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
 
 In the following example, we use three elements (`<p>`) as child nodes of `<article>`, and use strings, numbers, and booleans as elements of `<p>`. It is trivial to guess the result.
 
