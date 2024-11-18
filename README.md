@@ -286,21 +286,21 @@ print(elem)
 ### `acandy.some`
 
 ```lua
-local frag1 = some.<tag>(<arg1>, <arg2>, ...)
-local frag2 = some.<tag>[<attr>](<arg1>, <arg2>, ...)
+local frag1 = some.xxx(arg1, arg2, ...)
+local frag2 = some.xxx[attr](arg1, arg2, ...)
 ```
 
 is equivalent to:
 
 ```lua
 local frag1 = Fragment {
-   a.<tag>(<arg1>),
-   a.<tag>(<arg2>),
+   a.xxx(arg1),
+   a.xxx(arg2),
    ...,
 }
 local frag2 = Fragment {
-   a.<tag>[<attr>](<arg1>),
-   a.<tag>[<attr>](<arg2>),
+   a.xxx[attr](arg1),
+   a.xxx[attr](arg2),
    ...,
 }
 ```
@@ -452,7 +452,7 @@ print(elem)
 
 ### `acandy.Doctype`
 
-Currently only the HTML5 doctype is supported. It is accessed by `DocType.HTML`.
+Currently only the HTML5 doctype is supported. It is accessed by `Doctype.HTML`.
 
 ```lua
 tostring(acandy.Doctype.HTML)  --> '<!DOCTYPE html>'
@@ -567,9 +567,7 @@ print(get_article())
 
 ### Table-like values
 
-Table-like values are values that can be read as tables.
-
-A value `t` is considered a table-like value if and only if it satisfies the following conditions:
+Table-like values are values that can be read as tables. A value `t` is considered a table-like value if and only if it satisfies the following conditions:
 
 - Any of the following:
 
@@ -584,9 +582,7 @@ A value `t` is considered a table-like value if and only if it satisfies the fol
 
 ### List-like values
 
-List-like values are values that can be read as sequences.
-
-A value `t` is considered a list-like value if and only if it satisfies the following conditions:
+List-like values are values that can be read as sequences. A value `t` is considered a list-like value if and only if it satisfies the following conditions:
 
 - Any of the following:
 

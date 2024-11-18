@@ -246,7 +246,7 @@ elem1(
 
 有点像 CSS 的[子组合器](https://developer.mozilla.org/docs/Web/CSS/Child_combinator) `>`，只不过它用于创建元素而不是选择元素。
 
-前提是 `<elem1>`、`<elem2>` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)或[已构建元素](#元素实例属性)。
+前提是 `elem1`—`elemN` 不是[空元素](https://developer.mozilla.org/docs/Glossary/Void_element)或[已构建元素](#元素实例属性)。
 
 例子：
 
@@ -284,21 +284,21 @@ print(elem)
 ### `acandy.some`
 
 ```lua
-local frag1 = some.<tag>(<arg1>, <arg2>, ...)
-local frag2 = some.<tag>[<attr>](<arg1>, <arg2>, ...)
+local frag1 = some.xxx(arg1, arg2, ...)
+local frag2 = some.xxx[attr](arg1, arg2, ...)
 ```
 
 相当于：
 
 ```lua
 local frag1 = Fragment {
-   a.<tag>(<arg1>),
-   a.<tag>(<arg2>),
+   a.xxx(arg1),
+   a.xxx(arg2),
    ...,
 }
 local frag2 = Fragment {
-   a.<tag>[<attr>](<arg1>),
-   a.<tag>[<attr>](<arg2>),
+   a.xxx[attr](arg1),
+   a.xxx[attr](arg2),
    ...,
 }
 ```
@@ -565,9 +565,7 @@ print(get_article())
 
 ### 类表值
 
-类表（table-like）值是指可以当作表来读取的值。
-
-当且仅当一个值 `t` 符合以下条件时，该值被认为是类表值：
+类表（table-like）值是指可以当作表来读取的值。当且仅当一个值 `t` 符合以下条件时，该值被认为是类表值：
 
 - 满足任意一条：
 
@@ -582,9 +580,7 @@ print(get_article())
 
 ### 类列表值
 
-类列表（list-like）值是指可以当作序列来读取的值。
-
-当且仅当一个值 `t` 符合以下条件时，该值被认为是类列表值：
+类列表（list-like）值是指可以当作序列来读取的值。当且仅当一个值 `t` 符合以下条件时，该值被认为是类列表值：
 
 - 满足任意一条：
 
