@@ -27,7 +27,8 @@ local VOID_ELEMS, HTML_ELEMS, RAW_TEXT_ELEMS = (function ()
 	local config = require('.elem_config')
 	return config.VOID_ELEMS, config.HTML_ELEMS, config.RAW_TEXT_ELEMS
 end)()
-
+local classes = require('.classes')
+local node_mts = classes.node_mts
 
 ---@class Symbol
 
@@ -61,47 +62,51 @@ end
 ---@type metatable
 local Fragment_mt
 
----Append the serialized string of the Fragment to `strs`.
----Use len to avoid calling `#strs` repeatedly. This improves performance by
+---Append the serialized string of the Fragment to `buff`.
+---Use len to avoid calling `#buff` repeatedly. This improves performance by
 ---~1/3.
----@param strs table
+---@param buff table
 ---@param frag table
----@param strs_len? integer number of `strs`, used to optimize performance.
+---@param buff_len? integer length of `buff`, used to optimize performance.
 ---@param no_encode? boolean true to prevent encoding strings, e.g. when in <script>.
-local function extend_strings_with_fragment(strs, frag, strs_len, no_encode)
+local function extend_str_buff_with_frag(buff, frag, buff_len, no_encode)
 	if #frag == 0 then return end
-	strs_len = strs_len or #strs
+	buff_len = buff_len or #buff
 
 	local function append_serialized(node)
 		local node_type = type(node)
-		if container_level_of(node) >= 1 then  -- Fragment
+		if container_level_of(node) >= 1 then  -- Fragment, list
 			for _, child_node in ipairs(node) do
 				append_serialized(child_node)
 			end
 		elseif node_type == 'function' then
 			append_serialized(node())
 		elseif node_type == 'string' then
-			strs_len = strs_len + 1
-			strs[strs_len] = no_encode and node or utils.html_encode(node)
+			buff_len = buff_len + 1
+			buff[buff_len] = no_encode and node or utils.html_encode(node)
 		else  -- others: Raw, Element, boolean, number
-			strs_len = strs_len + 1
-			strs[strs_len] = tostring(node)
+			local str = tostring(node)
+			if not (node_mts[getmt(node)] or no_encode) then
+				str = utils.html_encode(str)
+			end
+			buff_len = buff_len + 1
+			buff[buff_len] = str
 		end
 	end
 
 	append_serialized(frag)
 end
 
-Fragment_mt = {
+Fragment_mt = node_mts:register {
 	---Flat and concat the Fragment, returns string.
 	---@param self Fragment
 	---@return string
 	__tostring = function (self)
 		if #self == 0 then return '' end
 
-		local children = {}
-		extend_strings_with_fragment(children, self, 0)
-		return concat(children)
+		local buff = {}
+		extend_str_buff_with_frag(buff, self, 0)
+		return concat(buff)
 	end,
 	__index = {
 		concat = table.concat,
@@ -111,8 +116,7 @@ Fragment_mt = {
 		move = table.move,
 		remove = table.remove,
 		sort = table.sort,
-		---@diagnostic disable-next-line: deprecated
-		unpack = table.unpack or unpack,
+		unpack = table.unpack or unpack,  ---@diagnostic disable-line: deprecated
 	},
 	[KEY_LIST_LIKE] = true,
 }
@@ -172,29 +176,29 @@ end
 ---@class Breadcrumb
 
 
----@param strs string[]
+---@param buff string[]
 ---@param attr_map {[string]: string | number | boolean}
----@param strs_len integer?
+---@param buff_len integer?
 ---@return integer
-local function extend_strings_with_attrs(strs, attr_map, strs_len)
-	strs_len = strs_len or #strs
+local function extend_str_buff_with_attrs(buff, attr_map, buff_len)
+	buff_len = buff_len or #buff
 	for k, v in pairs(attr_map) do
 		if v == true then
 			-- boolean attributes
 			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
-			strs_len = strs_len + 2
-			strs[strs_len - 1] = ' '
-			strs[strs_len] = k
+			buff_len = buff_len + 2
+			buff[buff_len - 1] = ' '
+			buff[buff_len] = k
 		elseif v then  -- exclude the case `v == false`
-			strs_len = strs_len + 5
-			strs[strs_len - 4] = ' '
-			strs[strs_len - 3] = k
-			strs[strs_len - 2] = '="'
-			strs[strs_len - 1] = utils.attr_encode(tostring(v))
-			strs[strs_len] = '"'
+			buff_len = buff_len + 5
+			buff[buff_len - 4] = ' '
+			buff[buff_len - 3] = k
+			buff[buff_len - 2] = '="'
+			buff[buff_len - 1] = utils.attr_encode(tostring(v))
+			buff[buff_len] = '"'
 		end
 	end
-	return strs_len
+	return buff_len
 end
 
 
@@ -277,7 +281,7 @@ local function elem_to_string(self)
 
 	-- format open tag
 	local result = {'<', tag_name}
-	extend_strings_with_attrs(result, self[SYM_ATTR_MAP])
+	extend_str_buff_with_attrs(result, self[SYM_ATTR_MAP])
 	result[#result+1] = '>'
 
 	-- return without children or close tag when being a void element
@@ -287,7 +291,7 @@ local function elem_to_string(self)
 	end
 
 	-- format children
-	extend_strings_with_fragment(result, self[SYM_CHILDREN], nil, RAW_TEXT_ELEMS[tag_name])
+	extend_str_buff_with_frag(result, self[SYM_CHILDREN], nil, RAW_TEXT_ELEMS[tag_name])
 	-- format close tag
 	result[#result+1] = '</'
 	result[#result+1] = tag_name
@@ -495,7 +499,7 @@ local function breadcrumb_to_string(self)
 		result[#result+1] = '><'
 		result[#result+1] = tag_name
 		if attr_maps[i] then
-			extend_strings_with_attrs(result, attr_maps[i])
+			extend_str_buff_with_attrs(result, attr_maps[i])
 		end
 	end
 	result[1] = '<'
@@ -581,21 +585,21 @@ local function error_wrong_newindex()
 end
 
 
-BareElement_mt = {
+BareElement_mt = node_mts:register {
 	__tostring = bare_elem_to_string,  --> string
 	__index = new_building_elem_by_shorthand_attrs,  --> BuildingElement
 	__call = new_built_elem_from_props,  --> BuiltElement
 	__div = elem_div,  --> Breadcrumb | BuiltElement
 	__newindex = error_wrong_newindex,
 }
-BuildingElement_mt = {
+BuildingElement_mt = node_mts:register {
 	__tostring = elem_to_string,  --> string
 	__call = new_built_elem_from_props,  --> BuiltElement
 	__div = elem_div,  --> Breadcrumb | BuiltElement
 	__index = error_wrong_index,
 	__newindex = error_wrong_newindex,
 }
-BuiltElement_mt = {
+BuiltElement_mt = node_mts:register {
 	__tostring = elem_to_string,  --> string
 	__index = get_elem_prop,
 	__newindex = set_elem_prop,
@@ -603,7 +607,7 @@ BuiltElement_mt = {
 		error('attempt to perform division on a built element', 2)
 	end,
 }
-Breadcrumb_mt = {
+Breadcrumb_mt = node_mts:register {
 	__tostring = breadcrumb_to_string,  --> string
 	__call = function (self, props)  --> BuiltElement
 		local root_elem, leaf_elem = breadcrumb_to_built_elem(self)
@@ -715,7 +719,6 @@ local function to_extended_env(env)
 	return setmt(utils.raw_shallow_copy(env), new_mt)
 end
 
-local classes = require('.classes')
 
 return {
 	-- namespaces

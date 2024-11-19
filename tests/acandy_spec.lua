@@ -95,35 +95,38 @@ describe('Building element', function ()
 
 	it('can be gotten by indexing a base element with id and/or class', function ()
 		assert.are.equal(tostring(div['my-class']), '<div class="my-class"></div>')
-		assert.are.equal(tostring(div[' my-class ']), '<div class="my-class"></div>')
+		assert.are.equal(tostring(div[' \t\rmy-class\n\f']), '<div class="my-class"></div>')
 
 		assert.are.equal(tostring(div['#my-id']), '<div id="my-id"></div>')
-		assert.are.equal(tostring(div[' #my-id ']), '<div id="my-id"></div>')
+		assert.are.equal(tostring(div[' \t\r#my-id\n\f']), '<div id="my-id"></div>')
 
 		assert.is_true(match_html(
-			tostring(div['#my-id my-class']),
-			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
+			tostring(div['#my-id my-class-1 my-class-2 my-class-3']),
+			'<div', {' id="my-id"', ' class="my-class-1 my-class-2 my-class-3"'}, '></div>'
 		))
 		assert.is_true(match_html(
-			tostring(div['my-class #my-id']),
-			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
+			tostring(div['my-class-1 #my-id my-class-2 my-class-3']),
+			'<div', {' id="my-id"', ' class="my-class-1 my-class-2 my-class-3"'}, '></div>'
 		))
 		assert.is_true(match_html(
 			tostring(div['my-class#my-id']),
 			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
 		))
 		assert.is_true(match_html(
-			tostring(div[' my-class \n #my-id ']),
+			tostring(div[' \t\rmy-class\n\f#my-id ']),
 			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
 		))
 	end)
 
 	it('raises an error when multiple id provided', function ()
 		assert.has.error(function ()
+			local never = div['##id2']
+		end)
+		assert.has.error(function ()
 			local never = div['#id1#id2']
 		end)
 		assert.has.error(function ()
-			local never = div['#id1 #id2']
+			local never = div['class1 #id1 class2 #id2 class3']
 		end)
 	end)
 
@@ -137,19 +140,19 @@ describe('Building element', function ()
 	it('raises errors when trying to get properties', function ()
 		local elem = div['my-class']
 		assert.has.error(function ()
-			print(elem.tag_name)
+			local never = elem.tag_name
 		end)
 		assert.has.error(function ()
-			print(elem.children)
+			local never = elem.children
 		end)
 		assert.has.error(function ()
-			print(elem.attributes)
+			local never = elem.attributes
 		end)
 		assert.has.error(function ()
-			print(elem[1])
+			local never = elem[1]
 		end)
 		assert.has.error(function ()
-			print(elem.id)
+			local never = elem.class
 		end)
 	end)
 
@@ -219,6 +222,11 @@ describe('Built element', function ()
 		}), '<div class="cls">a1b2c3d4</div>')
 	end)
 
+	it("does not check end tags in raw text elements", function ()
+		assert.are.equal(tostring(a.style('</style>')), '<style></style></style>')
+		assert.are.equal(tostring(a.script('</script>')), '<script></script></script>')
+	end)
+
 	it('has properties', function ()
 		local li = a.li 'item 1'
 		local list = a.ol {id = "my-id", li}
@@ -249,6 +257,11 @@ end)
 
 describe('String escaping', function ()
 	local str = '& \194\160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
+	local function func_returns_string()
+		return str
+	end
+	-- issue: #11
+	local table_with_tostring = setmetatable({}, {__tostring = func_returns_string})
 
 	it('replaces `& NBSP " < >` in attribute values with named references', function ()
 		local answer = '<div class="'
@@ -257,7 +270,9 @@ describe('String escaping', function ()
 			..'"></div>'
 		assert.are.equal(tostring(a.div[str]), answer)
 		assert.are.equal(tostring(a.div[{class = str}]), answer)
+		assert.are.equal(tostring(a.div[{class = table_with_tostring}]), answer)
 		assert.are.equal(tostring(a.div {class = str}), answer)
+		assert.are.equal(tostring(a.div {class = table_with_tostring}), answer)
 	end)
 
 	it('replaces `& NBSP < >` in texts other than attribute value with named references', function ()
@@ -266,6 +281,20 @@ describe('String escaping', function ()
 			..'&amp;amp; &amp;nbsp; &amp;quot; &amp;apos; &amp;lt; &amp;gt;'
 			..'</div>'
 		assert.are.equal(tostring(a.div(str)), answer)
+		assert.are.equal(tostring(a.div(func_returns_string)), answer)
+		assert.are.equal(tostring(a.div(table_with_tostring)), answer)
+	end)
+
+	it('does not escape string from acandy nodes', function ()
+		local node1 = a.div
+		assert.are.equal(tostring(a.div(node1)), '<div>'..tostring(node1)..'</div>')
+		local node2 = acandy.Doctype.HTML
+		assert.are.equal(
+			tostring(Fragment {node2, a.html {a.head, a.body}}),
+			tostring(node2)..'<html><head></head><body></body></html>'
+		)
+		local node3 = acandy.Comment(str)
+		assert.are.equal(tostring(a.div(node3)), '<div>'..tostring(node3)..'</div>')
 	end)
 
 	it("does not replace characters in an object's properties", function ()
@@ -276,18 +305,94 @@ describe('String escaping', function ()
 		assert.are.equal(elem.class, str)
 		assert.are.equal(elem[1], str)
 	end)
-end)
 
-describe('Raw text element', function ()
-	local str = '& \194\160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
-
-	it("does not encode any character in text child", function ()
+	it("does not encode any character in raw text elements", function ()
 		assert.are.equal(tostring(a.style(str)), '<style>'..str..'</style>')
 		assert.are.equal(tostring(a.script(str)), '<script>'..str..'</script>')
 	end)
+end)
 
-	it("does not check end tag", function ()
-		assert.are.equal(tostring(a.style('</style>')), '<style></style></style>')
-		assert.are.equal(tostring(a.script('</script>')), '<script></script></script>')
+describe('`acandy.Comment`', function ()
+	-- spec: https://html.spec.whatwg.org/#comments
+
+	local Comment = acandy.Comment
+	it('arg is content', function ()
+		local comment = Comment('<>&"')
+		assert.are.equal(tostring(comment), '<!--<>&"-->')
+		assert.are.equal(tostring(a.div(comment)), '<div><!--<>&"--></div>')
+	end)
+
+	it('raises an error when content is invalid', function ()
+		-- the text must not start with the string ">" or "->",
+		-- nor contain the strings "<!--", "-->", or "--!>",
+		-- nor end with the string "<!-".
+		for _, invalid_content in ipairs {
+			'>', '>text', '->', '->text',
+			'<!--', 'text<!--', '<!--text', 'text<!--text',
+			'-->', 'text-->', '-->text', 'text-->text',
+			'--!>', 'text--!>', '--!>text', 'text--!>text',
+			'<!-', 'text<!-',
+		} do
+			assert.has.error(function ()
+				local never = Comment(invalid_content)
+			end)
+		end
+
+		for _, valid_content in ipairs {
+			'text>', 'text>text', 'text->', 'text->text',
+			'<!-text', 'text<!-text',
+			-- the text is allowed to end with the string "<!",
+			-- as in <!--My favorite operators are > and <!-->.
+			'<!', 'text<!', '<!text', 'text<!text',
+		} do
+			assert.is.equal(tostring(Comment(valid_content)), '<!--'..valid_content..'-->')
+		end
+	end)
+end)
+
+describe('`acandy.Doctype`', function ()
+	-- spec: https://html.spec.whatwg.org/#the-doctype
+
+	local Doctype = acandy.Doctype
+	it('has HTML5 doctype', function ()
+		assert.are.equal(tostring(Doctype.HTML), '<!DOCTYPE html>')
+		assert.are.equal(tostring(Fragment {Doctype.HTML, a.html}), '<!DOCTYPE html><html></html>')
+	end)
+end)
+
+describe('`acandy.Raw`', function ()
+	local str = '& \194\160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
+	it('is not escaped as a child node', function ()
+		local raw = acandy.Raw(str)
+		assert.are.equal(tostring(raw), str)
+		assert.are.equal(tostring(a.div(raw)), '<div>'..str..'</div>')
+		assert.are.equal(tostring(a.div {raw}), '<div>'..str..'</div>')
+	end)
+
+	it('can concat with another `Raw`, returns `Raw`', function ()
+		local str1, str2 = '1'..str, '2'..str
+		local raw1 = acandy.Raw(str1)
+		local raw2 = acandy.Raw(str2)
+		assert.are.equal(getmetatable(raw1), getmetatable(raw2), getmetatable(raw1..raw2))
+		assert.are.equal(tostring(raw1..raw2), str1..str2)
+		assert.are.equal(tostring(a.div(raw1..raw2)), '<div>'..str1..str2..'</div>')
+		assert.are.equal(tostring(raw1..raw2..raw1), str1..str2..str1)
+		assert.are.equal(tostring(a.div(raw1..raw2..raw1)), '<div>'..str1..str2..str1..'</div>')
+	end)
+
+	it('cannot concat with a string or number', function ()
+		local raw = acandy.Raw(str)
+		assert.has.error(function ()
+			local never = raw..str
+		end)
+		assert.has.error(function ()
+			local never = str..raw
+		end)
+		assert.has.error(function ()
+			local never = raw..1
+		end)
+		assert.has.error(function ()
+			local never = (1)..raw
+		end)
 	end)
 end)

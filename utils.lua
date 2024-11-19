@@ -203,10 +203,10 @@ function utils.parse_shorthand_attrs(str)
 	local id = nil
 	str = s_gsub(str, '#([^%s#]*)', function (s)
 		if s == '' then
-			error('empty id found in '..string.format('%q', str), 4)
+			error('empty id found in '..('%q'):format(str), 4)
 		end
 		if id then
-			error('two or more ids found in '..string.format('%q', str), 4)
+			error('two or more ids found in '..('%q'):format(str), 4)
 		end
 		id = s
 		return ''
