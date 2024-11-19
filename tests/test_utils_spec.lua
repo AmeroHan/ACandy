@@ -1,5 +1,3 @@
----@diagnostic disable: undefined-field
-
 local match_html = require('tests.test_utils').match_html
 
 

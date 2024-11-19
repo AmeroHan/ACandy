@@ -93,7 +93,7 @@ local function extend_strings_with_fragment(strs, frag, strs_len, no_encode)
 end
 
 Fragment_mt = {
-	---Flat and concat the Fragment, retruns string.
+	---Flat and concat the Fragment, returns string.
 	---@param self Fragment
 	---@return string
 	__tostring = function (self)
@@ -139,8 +139,8 @@ end
 ---```
 ---@class BareElement
 
----A BuildingElement is an Element derived from attribute shorthand syntex. The
----shorthand is a string of id and space-separated class names, and the syntex
+---A BuildingElement is an Element derived from attribute shorthand syntax. The
+---shorthand is a string of id and space-separated class names, and the syntax
 ---is to index the BareElement with a shorthand string, i.e. to put it inside
 ---the brackets followed after the tag name, e.g. `acandy.div['#id cls1 cls2']`.
 ---
@@ -280,7 +280,7 @@ local function elem_to_string(self)
 	extend_strings_with_attrs(result, self[SYM_ATTR_MAP])
 	result[#result+1] = '>'
 
-	-- retrun without children or close tag when being a void element
+	-- return without children or close tag when being a void element
 	-- void element: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
 	if VOID_ELEMS[tag_name] then
 		return concat(result)
@@ -416,7 +416,7 @@ local function set_elem_prop(self, key, val)
 end
 
 
----Sementic sugar for setting attributes.
+---Semantic sugar for setting attributes.
 ---e.g. `local elem = acandy.div['#id cls1 cls2']`
 ---@param self BareElement
 ---@param attrs string | table

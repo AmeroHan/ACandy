@@ -7,9 +7,10 @@ local s_gsub = string.gsub
 local utf8 = utf8 or require('.utf8_polyfill')
 
 ---Shallow copy a table's sequence part using `ipairs`.
----@param from table
----@param into table?
----@return table
+---@generic T
+---@param from T[]
+---@param into T[]?
+---@return T[]
 function utils.copy_ipairs(from, into)
 	into = into or {}
 	for i, v in ipairs(from) do
@@ -20,7 +21,7 @@ end
 
 ---Shallow copy a table using `pairs`.
 ---@param from table
----@---@param into table?
+---@param into table?
 ---@return table
 function utils.copy_pairs(from, into)
 	into = into or {}
@@ -43,9 +44,11 @@ function utils.raw_shallow_copy(from, into)
 end
 
 ---Apply `func` to each element of `...` and return a table.
----@param func function | table callable
----@vararg any
----@return any[]
+---@generic TIn
+---@generic TOut
+---@param func fun(arg: TIn): TOut
+---@vararg TIn
+---@return TOut[]
 function utils.map_varargs(func, ...)
 	local n = select('#', ...)
 	local t = {...}
@@ -78,7 +81,7 @@ function utils.html_encode(str)
 	return (s_gsub(str, '\194?[\160&<>]', ENTITY_ENCODE_MAP))
 end
 
----Retrun truthy value when `name` is a valid XML name, otherwise falsy value.
+---Return truthy value when `name` is a valid XML name, otherwise falsy value.
 ---
 ---Defined at:
 ---- https://www.w3.org/TR/xml/#NT-Name
@@ -132,7 +135,7 @@ local function is_pcen_char_code(code_point)
 	return false
 end
 
----Retrun truthy value when `name` is a valid HTML tag name, otherwise falsy value.
+---Return truthy value when `name` is a valid HTML tag name, otherwise falsy value.
 ---
 ---Defined at:
 ---- https://html.spec.whatwg.org/#syntax-tag-name
@@ -170,7 +173,7 @@ function utils.is_html_tag_name(name)
 	return validate(subs1) and validate(subs2)
 end
 
----Retrun truthy value when `name` is a valid HTML attribute name, otherwise falsy value.
+---Return truthy value when `name` is a valid HTML attribute name, otherwise falsy value.
 ---
 ---Defined at:
 ---- https://html.spec.whatwg.org/#syntax-attribute-name
@@ -185,24 +188,25 @@ function utils.is_html_attr_name(name)
 	return true
 end
 
----Retrun truthy value when `name` reserved by Lua (e.g., '_G', '_PROMPT'), otherwise falsy value.
+---Return truthy value when `name` is reserved by Lua (e.g., '_G', '_PROMPT'),
+---otherwise falsy value.
 ---@param name any
 ---@return any
 function utils.is_lua_reserved_name(name)
 	return type(name) == 'string' and name:find('^_[%u%d]+$')
 end
 
----@param str string | number
+---@param str string
 ---@return table
 function utils.parse_shorthand_attrs(str)
 	-- parse id
 	local id = nil
 	str = s_gsub(str, '#([^%s#]*)', function (s)
 		if s == '' then
-			error('empty id', 4)
+			error('empty id found in '..string.format('%q', str), 4)
 		end
 		if id then
-			error('puplicate id: '..s, 4)
+			error('two or more ids found in '..string.format('%q', str), 4)
 		end
 		id = s
 		return ''

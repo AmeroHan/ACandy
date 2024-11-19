@@ -1,7 +1,5 @@
 local setmt = setmetatable
 local concat = table.concat
----@diagnostic disable-next-line: deprecated
-local unpack = table.unpack or unpack
 
 local acandy = require('acandy')
 local a = acandy.a

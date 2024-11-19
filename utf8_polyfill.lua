@@ -76,7 +76,7 @@ local function code_point_iterator(s, n)
 	end
 
 	if n > #s then
-		return nil  -- no more codepoints
+		return nil  -- no more code points
 	end
 
 	local cp, next_pos = utf8_decode(bytes, n)

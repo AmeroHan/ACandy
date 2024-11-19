@@ -38,8 +38,8 @@ end
 ---@class Doctype
 -- Specs:
 --   HTML:
---     defination: https://html.spec.whatwg.org/#the-doctype
---     serializion: https://html.spec.whatwg.org/#serialising-html-fragments
+--     definition: https://html.spec.whatwg.org/#the-doctype
+--     serialization: https://html.spec.whatwg.org/#serialising-html-fragments
 --   XML: https://www.w3.org/TR/xml/#sec-prolog-dtd
 -- TODO: support any doctype
 
