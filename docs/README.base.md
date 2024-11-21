@@ -110,8 +110,8 @@ The output of this code, formatted (the same below), is as follows.
 > - 你不需要在字符串中处理 HTML 转义。如果不期望自动的转义，可以将内容放在 [`acandy.Raw`](#acandyraw) 中。
 > - 子结点并不必须是元素或字符串——虽然这里只展示了这两类，一切能 `tostring` 的值均可作为子结点。
 
-For HTML elements, <code>a.*xxx*</code> is case-**in**sensitive, so `a.div`, `a.Div`, `a.DIV`, etc., are the same value and will all become `<div></div>`. For other elements, <code>a.*xxx*</code> is case-sensitive.  
-对于 HTML 元素，<code>a.*xxx*</code> 是不区分大小写的，因此 `a.div`、`a.Div`、`a.DIV`……是同一个值，它们都将变成`<div></div>`。而对于其他元素，<code>a.*xxx*</code> 是大小写敏感的。
+<code>a.*xxx*</code> is [ASCII case-insensitive](https://infra.spec.whatwg.org/#ascii-case-insensitive), thus `a.div`, `a.Div`, `a.DIV`, etc., are the same value (i.e., `rawequal(a.div, a.Div) == true` and `rawequal(a.div, a.DIV) == true`) and will all become `<div></div>`.  
+<code>a.*xxx*</code> 是 [ASCII 大小写不敏感](https://infra.spec.whatwg.org/#ascii-case-insensitive)的，因此 `a.div`、`a.Div`、`a.DIV`……是同一个值（即 `rawequal(a.div, a.Div) == true`、` rawequal(a.div, a.DIV) == true`），它们都将变成`<div></div>`。
 
 ### Attributes | 属性
 

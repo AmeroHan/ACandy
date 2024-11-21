@@ -7,8 +7,8 @@ local MIN_CODE_POINT_BY_TAIL_LEN = {0x80, 0x800, 0x10000}
 
 ---@param bytes integer[]
 ---@param pos integer
----@return integer? @ code point, nil if invalid
----@return integer? @ next position, nil if invalid. NOTE may be out of bounds
+---@return integer? code_point nil if invalid
+---@return integer? next_position nil if invalid. NOTE may be out of bounds
 local function utf8_decode(bytes, pos)
 	local head = bytes[pos]
 	if head < 0x80 then

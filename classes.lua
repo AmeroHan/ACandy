@@ -4,27 +4,36 @@ local tostring = tostring
 
 local classes = {}
 
+---@class StringSymbol: Symbol
+---@field getter fun(t: table): string
+local SYM_STRING = {}
+
+function SYM_STRING.getter(t)
+	return t[SYM_STRING]
+end
+
+classes.SYM_STRING = SYM_STRING
+
+
 ---@type {[metatable]: true, register: fun(self: self, mt: metatable): metatable}
-local node_mts = {
+local node_mts = setmt({
 	---Register a metatable as a node metatable.
 	register = function (self, mt)
 		self[mt] = true
 		return mt
 	end,
-}
+}, {__mode = 'k'})
 ---To judge when a table with `__tostring` is being serialized, whether or not
 ---escape the string. If the table is an acandy node, it should not be escaped,
 ---as the node itself will handle the escaping.
 classes.node_mts = node_mts
-
-local SYM_CONTENT = {}  ---@type Symbol
 
 
 ---@class Comment
 
 local Comment_mt = node_mts:register {
 	__tostring = function (self)
-		return '<!--'..(self[SYM_CONTENT] or '')..'-->'
+		return '<!--'..(self[SYM_STRING] or '')..'-->'
 	end,
 }
 ---Comment.
@@ -46,7 +55,7 @@ function classes.Comment(content)
 			error('invalid comment content: '..('%q'):format(content), 2)
 		end
 	end
-	return setmt({[SYM_CONTENT] = content}, Comment_mt)
+	return setmt({[SYM_STRING] = content}, Comment_mt)
 end
 
 ---@class Doctype
@@ -73,14 +82,12 @@ classes.Doctype = {
 
 local Raw_mt  ---@type metatable
 Raw_mt = node_mts:register {
-	__tostring = function (self)
-		return self[SYM_CONTENT]
-	end,
+	__tostring = SYM_STRING.getter,
 	__concat = function (left, right)
 		if getmt(left) ~= Raw_mt or getmt(right) ~= Raw_mt then
 			error('Raw object can only be concatenated with another Raw object', 2)
 		end
-		return setmt({[SYM_CONTENT] = left[SYM_CONTENT]..right[SYM_CONTENT]}, Raw_mt)
+		return setmt({[SYM_STRING] = left[SYM_STRING]..right[SYM_STRING]}, Raw_mt)
 	end,
 	__newindex = function ()
 		error('Raw object is immutable', 2)
@@ -91,7 +98,7 @@ Raw_mt = node_mts:register {
 ---@param content any value to be converted to string by `tostring()`
 ---@return Raw
 function classes.Raw(content)
-	return setmt({[SYM_CONTENT] = tostring(content)}, Raw_mt)
+	return setmt({[SYM_STRING] = tostring(content)}, Raw_mt)
 end
 
 return classes

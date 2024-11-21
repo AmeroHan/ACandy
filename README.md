@@ -97,7 +97,7 @@ The output of this code, formatted (the same below), is as follows.
 > - You don’t need to handle HTML escaping in strings. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
 > - Child nodes do not have to be elements or strings—although only these two types are shown here, any value that can be `tostring` is capable of a child node.
 
-For HTML elements, <code>a.*xxx*</code> is case-**in**sensitive, so `a.div`, `a.Div`, `a.DIV`, etc., are the same value and will all become `<div></div>`. For other elements, <code>a.*xxx*</code> is case-sensitive.
+<code>a.*xxx*</code> is [ASCII case-insensitive](https://infra.spec.whatwg.org/#ascii-case-insensitive), thus `a.div`, `a.Div`, `a.DIV`, etc., are the same value (i.e., `rawequal(a.div, a.Div) == true` and `rawequal(a.div, a.DIV) == true`) and will all become `<div></div>`.
 
 ### Attributes
 

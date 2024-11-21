@@ -106,7 +106,7 @@ local function check_not_eof(line, level)
 end
 
 ---@class State
----@field consume fun(self: self, line: string | nil, line_num: number): State, boolean, ParsedLine[]? @ next_state, need_reconsume, parsed_lines
+---@field consume fun(self: self, line: string | nil, line_num: number): next_state: State, need_reconsume: boolean, parsed_lines: ParsedLine[]?
 ---@field [any] any
 
 local states = {}

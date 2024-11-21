@@ -23,17 +23,17 @@ local rawset = rawset
 local tostring = tostring
 
 local utils = require('.utils')
-local VOID_ELEMS, HTML_ELEMS, RAW_TEXT_ELEMS = (function ()
-	local config = require('.elem_config')
-	return config.VOID_ELEMS, config.HTML_ELEMS, config.RAW_TEXT_ELEMS
+local default_void_elems, default_raw_text_elems = (function ()
+	local config = require('.config')
+	return config.void_elements, config.raw_text_elements
 end)()
 local classes = require('.classes')
 local node_mts = classes.node_mts
 
 ---@class Symbol
 
+local SYM_STRING = classes.SYM_STRING
 local SYM_ATTR_MAP = {}  ---@type Symbol
-local SYM_STRING = {}  ---@type Symbol
 local SYM_CHILDREN = {}  ---@type Symbol
 local SYM_TAG_NAME = {}  ---@type Symbol
 
@@ -41,7 +41,7 @@ local KEY_LIST_LIKE = '__acandy_list_like'
 local KEY_TABLE_LIKE = '__acandy_table_like'
 
 ---@param v any
----@return integer @ 1: list-like, 2: table-like, 0: others
+---@return integer 1: list-like, 2: table-like, 0: others
 local function container_level_of(v)
 	local mt = getmt(v)
 	if not mt then
@@ -54,13 +54,6 @@ local function container_level_of(v)
 	return 0
 end
 
-
----A list-like table with metatable `Fragment_mt`.
----@class Fragment: table
-
----Metatable used by Fragment object.
----@type metatable
-local Fragment_mt
 
 ---Append the serialized string of the Fragment to `buff`.
 ---Use len to avoid calling `#buff` repeatedly. This improves performance by
@@ -97,7 +90,37 @@ local function extend_str_buff_with_frag(buff, frag, buff_len, no_encode)
 	append_serialized(frag)
 end
 
-Fragment_mt = node_mts:register {
+---@param buff string[]
+---@param attr_map {[string]: string | number | boolean}
+---@param buff_len integer?
+---@return integer new_buff_len
+local function extend_str_buff_with_attrs(buff, attr_map, buff_len)
+	buff_len = buff_len or #buff
+	for k, v in pairs(attr_map) do
+		if v == true then
+			-- boolean attributes
+			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
+			buff_len = buff_len + 2
+			buff[buff_len - 1] = ' '
+			buff[buff_len] = k
+		elseif v then  -- exclude the case `v == false`
+			buff_len = buff_len + 5
+			buff[buff_len - 4] = ' '
+			buff[buff_len - 3] = k
+			buff[buff_len - 2] = '="'
+			buff[buff_len - 1] = utils.attr_encode(tostring(v))
+			buff[buff_len] = '"'
+		end
+	end
+	return buff_len
+end
+
+
+---ACandy fragment.
+---@class Fragment: any[]
+
+---@type metatable
+local Fragment_mt = node_mts:register {
 	---Flat and concat the Fragment, returns string.
 	---@param self Fragment
 	---@return string
@@ -131,360 +154,33 @@ local function Fragment(children)
 	return setmt({children}, Fragment_mt)
 end
 
-
----A BareElement is an Element without any properties except tag name, e.g.,
----`acandy.div`. It is immutable and can be cached and reused.
----Indexing a BareElement would return a BuildingElement, and calling it would
----return a BuiltElement. Both methods would not change the element itself.
----
----Example:
----```lua
----local bare_div = a.div
----```
----@class BareElement
-
----A BuildingElement is an Element derived from attribute shorthand syntax. The
----shorthand is a string of id and space-separated class names, and the syntax
----is to index the BareElement with a shorthand string, i.e. to put it inside
----the brackets followed after the tag name, e.g. `acandy.div['#id cls1 cls2']`.
----
----Example:
----```lua
----local building_div = a.div['#id cls1 cls2']
----```
----
----Similar to BareElements, a BuildingElement can be called to get a
----BuiltElement with properties set.
----@class BuildingElement
-
----A BuiltElement is an Element derived from a BareElement or a BuildingElement
----by calling it, which would return the BuiltElement with properties set.
----
----```lua
----local built_pre1 = a.pre {
----	class = 'lang-lua';
----	"print('Hello, ACandy!')",
----}
----
----local built_pre2 = a.pre['lang-lua'] "print('Hello, ACandy!')"
----```
----
----Although named "Built", it is still mutable. Its properties can be changed by
----assigning.
----@class BuiltElement
-
----@class Breadcrumb
-
-
----@param buff string[]
----@param attr_map {[string]: string | number | boolean}
----@param buff_len integer?
----@return integer
-local function extend_str_buff_with_attrs(buff, attr_map, buff_len)
-	buff_len = buff_len or #buff
-	for k, v in pairs(attr_map) do
-		if v == true then
-			-- boolean attributes
-			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
-			buff_len = buff_len + 2
-			buff[buff_len - 1] = ' '
-			buff[buff_len] = k
-		elseif v then  -- exclude the case `v == false`
-			buff_len = buff_len + 5
-			buff[buff_len - 4] = ' '
-			buff[buff_len - 3] = k
-			buff[buff_len - 2] = '="'
-			buff[buff_len - 1] = utils.attr_encode(tostring(v))
-			buff[buff_len] = '"'
-		end
-	end
-	return buff_len
-end
-
-
-local BareElement_mt  ---@type metatable
-local BuiltElement_mt  ---@type metatable
-local BuildingElement_mt  ---@type metatable
-local Breadcrumb_mt  ---@type metatable
-
-
----@param tag_name string
----@return BareElement
-local function BareElement(tag_name)
-	local str
-	if VOID_ELEMS[tag_name] then
-		str = '<'..tag_name..'>'
-	else
-		str = '<'..tag_name..'></'..tag_name..'>'
-	end
-	local elem = {
-		[SYM_TAG_NAME] = tag_name,  ---@type string
-		[SYM_STRING] = str,  ---@type string
-	}
-	return setmt(elem, BareElement_mt)
-end
-
-
----@param tag_name string
----@param attr_map {[string]: string | number | boolean}
----@return BuildingElement
-local function BuildingElement(tag_name, attr_map)
-	local elem = {
-		[SYM_TAG_NAME] = tag_name,
-		[SYM_ATTR_MAP] = attr_map,
-		[SYM_CHILDREN] = not VOID_ELEMS[tag_name] and {} or nil,
-	}
-	return setmt(elem, BuildingElement_mt)
-end
-
-
----@param tag_name string
----@param attr_map {[string]: string | number | boolean}
----@param children? any[]
----@return BuiltElement
-local function BuiltElement(tag_name, attr_map, children)
-	assert(not (VOID_ELEMS[tag_name] and children), 'void elements cannot have children')
-	assert(VOID_ELEMS[tag_name] or type(children) == 'table', 'non-void elements must have children')
-	local elem = {
-		[SYM_TAG_NAME] = tag_name,
-		[SYM_ATTR_MAP] = attr_map,
-		[SYM_CHILDREN] = children,
-	}
-	return setmt(elem, BuiltElement_mt)
-end
-
-
----@param tag_names string[]
----@param attr_maps {[string]: string | number | boolean}[]
----@return Breadcrumb
-local function Breadcrumb(tag_names, attr_maps)
-	local breadcrumb = {
-		[SYM_TAG_NAME] = tag_names,
-		[SYM_ATTR_MAP] = attr_maps,
-	}
-	return setmt(breadcrumb, Breadcrumb_mt)
-end
-
-
----@param self BareElement
----@return string
-local function bare_elem_to_string(self)
-	return self[SYM_STRING]
-end
-
-
----Convert the object into HTML code.
----@param self BuildingElement | BuiltElement
----@return string
-local function elem_to_string(self)
-	local tag_name = self[SYM_TAG_NAME]
-
-	-- format open tag
-	local result = {'<', tag_name}
-	extend_str_buff_with_attrs(result, self[SYM_ATTR_MAP])
-	result[#result+1] = '>'
-
-	-- return without children or close tag when being a void element
-	-- void element: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
-	if VOID_ELEMS[tag_name] then
-		return concat(result)
-	end
-
-	-- format children
-	extend_str_buff_with_frag(result, self[SYM_CHILDREN], nil, RAW_TEXT_ELEMS[tag_name])
-	-- format close tag
-	result[#result+1] = '</'
-	result[#result+1] = tag_name
-	result[#result+1] = '>'
-
-	return concat(result)
-end
-
-
----Return tag name, attribute or child node depending on the key.
----@param self BuiltElement
----@param key string | number
-local function get_elem_prop(self, key)
-	if key == 'tag_name' then
-		return self[SYM_TAG_NAME]
-	elseif key == 'children' then
-		local children = rawget(self, SYM_CHILDREN)
-		return children and setmt(children, Fragment_mt)
-	elseif key == 'attributes' then
-		return self[SYM_ATTR_MAP]
-	elseif type(key) == 'string' then
-		-- e.g. `elem.class`
-		return self[SYM_ATTR_MAP][key]
-	elseif type(key) == 'number' then
-		-- e.g. `elem[1]`
-		local children = rawget(self, SYM_CHILDREN)
-		return children and children[key]  -- no error for ipairs
-	end
-
-	error("element property key's type is neither 'string' nor 'number'", 2)
-end
-
-
----@param self BareElement | BuildingElement | BuiltElement
----@param props any
----@return BuiltElement
-local function new_built_elem_from_props(self, props)
-	local tag_name = self[SYM_TAG_NAME]
-	local base_attr_map = rawget(self, SYM_ATTR_MAP)
-	local new_attr_map = base_attr_map and utils.copy_pairs(base_attr_map) or {}
-	local container_level = container_level_of(props)
-
-	if VOID_ELEMS[tag_name] then  -- void element, e.g. <br>, <img>
-		if container_level == 2 then
-			-- set attributes
-			for k, v in pairs(props) do
-				if type(k) == 'string' then
-					if not utils.is_html_attr_name(k) then
-						error('invalid attribute name: '..k, 2)
-					end
-					new_attr_map[k] = v
-				end
-			end
-		end
-		return BuiltElement(tag_name, new_attr_map)
-	end
-
-	local new_children = {}
-	if container_level == 2 then
-		for k, v in pairs(props) do
-			local t = type(k)
-			if t == 'number' then
-				new_children[k] = v
-			elseif t == 'string' then
-				if not utils.is_html_attr_name(k) then
-					error('invalid attribute name: '..k, 2)
-				end
-				new_attr_map[k] = v
-			end
-		end
-	elseif container_level == 1 then
-		utils.copy_ipairs(props, new_children)
-	else  -- treat as a single child
-		new_children[1] = props
-	end
-
-	return BuiltElement(tag_name, new_attr_map, new_children)
-end
-
-
----Assign to tag name, attribute or child node depending on the key.
----@param self BuildingElement | BuiltElement
----@param key string | number
----@param val any
-local function set_elem_prop(self, key, val)
-	if key == 'tag_name' then
-		-- e.g. elem.tag_name = 'div'
-		if not utils.is_html_tag_name(val) then
-			error('invalid tag name: '..val, 2)
-		end
-
-		local lower = val:lower()
-		if HTML_ELEMS[lower] then
-			val = lower
-		end
-
-		if self[SYM_TAG_NAME] == val then return end
-
-		-- 根据元素类型，创建/删除子节点
-		if VOID_ELEMS[val] and rawget(self, SYM_CHILDREN) then
-			self[SYM_CHILDREN] = nil
-		elseif not (VOID_ELEMS[val] or rawget(self, SYM_CHILDREN)) then
-			rawset(self, SYM_CHILDREN, {})
-		end
-
-		-- 为tag_name赋值
-		self[SYM_TAG_NAME] = val
-	elseif key == 'children' or key == 'attributes' then
-		error('attempt to replace the '..key..' table of the element')
-	elseif type(key) == 'string' then
-		-- e.g. elem.class = 'content'
-		if not utils.is_html_attr_name(key) then
-			error('invalid attribute name: '..key, 2)
-		end
-		self[SYM_ATTR_MAP][key] = val
-	elseif type(key) == 'number' then
-		-- e.g. elem[1] = 'Lorem ipsum dolor sit amet...'
-		local children = rawget(self, SYM_CHILDREN)
-		if not children then
-			error('attempt to assign child on a void element', 2)
-		end
-		children[key] = val
-	else
-		error("element property key's type is neither 'string' nor 'number'", 2)
-	end
-end
-
-
----Semantic sugar for setting attributes.
----e.g. `local elem = acandy.div['#id cls1 cls2']`
----@param self BareElement
----@param attrs string | table
----@return BuildingElement
-local function new_building_elem_by_shorthand_attrs(self, attrs)
-	local attr_map
-	if type(attrs) == 'string' then
-		attr_map = utils.parse_shorthand_attrs(attrs)
-	elseif container_level_of(attrs) == 2 then
-		attr_map = {}
-		for k, v in pairs(attrs) do
-			if type(k) == 'string' then
-				if not utils.is_html_attr_name(k) then
-					error('invalid attribute name: '..k, 2)
-				end
-				attr_map[k] = v
-			end
-		end
-	else
-		error('invalid attributes: '..tostring(attrs), 2)
-	end
-	return BuildingElement(self[SYM_TAG_NAME], attr_map)
-end
-
-
----@param self Breadcrumb
----@return Breadcrumb
-local function copy_breadcrumb(self)
-	local new_breadcrumb = {
-		[SYM_TAG_NAME] = utils.copy_ipairs(self[SYM_TAG_NAME]),
-		[SYM_ATTR_MAP] = utils.copy_ipairs(self[SYM_ATTR_MAP]),
-	}
-	return setmt(new_breadcrumb, Breadcrumb_mt)
-end
-
-
 ---@param breadcrumb Breadcrumb
----@param tag_name string
----@param attr_map {[string]: string | number | boolean}?
-local function append_elem_to_breadcrumb(breadcrumb, tag_name, attr_map)
-	local new_len = #breadcrumb[SYM_TAG_NAME] + 1
-	breadcrumb[SYM_TAG_NAME][new_len] = tag_name
-	breadcrumb[SYM_ATTR_MAP][new_len] = attr_map
+---@return string[] tag_names
+---@return ({[string]: string | number | boolean} | nil)[] attr_maps
+local function clone_breadcrumb_tags_and_attrs(breadcrumb)
+	local new_tag_names = {}
+	local new_attr_maps = {}
+	local orig_attr_maps = breadcrumb[SYM_ATTR_MAP]
+	for i, tag_name in ipairs(breadcrumb[SYM_TAG_NAME]) do
+		new_tag_names[i] = tag_name
+		new_attr_maps[i] = orig_attr_maps
+	end
+	return new_tag_names, new_attr_maps
 end
-
 
 ---@param breadcrumb1 Breadcrumb
 ---@param breadcrumb2 Breadcrumb
----@return Breadcrumb
+---@return string[] tag_names
+---@return ({[string]: string | number | boolean} | nil)[] attr_maps
 local function connect_breadcrumbs(breadcrumb1, breadcrumb2)
-	local new_tag_names = {}
-	local new_attr_maps = {}
-	local attr_maps_to_copy_from = breadcrumb1[SYM_ATTR_MAP]
-	for i, tag_name in ipairs(breadcrumb1[SYM_TAG_NAME]) do
-		new_tag_names[i] = tag_name
-		new_attr_maps[i] = attr_maps_to_copy_from[i]
-	end
+	local new_tag_names, new_attr_maps = clone_breadcrumb_tags_and_attrs(breadcrumb1)
 	local len = #new_tag_names
-	attr_maps_to_copy_from = breadcrumb2[SYM_ATTR_MAP]
+	local attr_maps2 = breadcrumb2[SYM_ATTR_MAP]
 	for i, tag_name in ipairs(breadcrumb2[SYM_TAG_NAME]) do
 		new_tag_names[len + i] = tag_name
-		new_attr_maps[len + i] = attr_maps_to_copy_from[i]
+		new_attr_maps[len + i] = attr_maps2[i]
 	end
-	return Breadcrumb(new_tag_names, new_attr_maps)
+	return new_tag_names, new_attr_maps
 end
 
 
@@ -514,68 +210,6 @@ local function breadcrumb_to_string(self)
 end
 
 
----@param breadcrumb Breadcrumb
----@return BuiltElement root_elem, BuiltElement leaf_elem
-local function breadcrumb_to_built_elem(breadcrumb)
-	local tag_names = breadcrumb[SYM_TAG_NAME]
-	local attr_maps = breadcrumb[SYM_ATTR_MAP]
-	local leaf_elem
-	local function f(i)
-		if tag_names[i + 1] then
-			return BuiltElement(tag_names[i], attr_maps[i] or {}, {f(i + 1)})
-		end
-		leaf_elem = BuiltElement(tag_names[i], attr_maps[i] or {}, {})
-		return leaf_elem
-	end
-	return f(1), leaf_elem
-end
-
-
----@param left Breadcrumb
----@param right any
----@return Breadcrumb | BuiltElement
-local function breadcrumb_div(left, right)
-	local right_mt = getmt(right)
-
-	if right_mt == BareElement_mt or right_mt == BuildingElement_mt then
-		local right_tag_name = right[SYM_TAG_NAME]
-		local right_attr_map = rawget(right, SYM_ATTR_MAP)
-
-		if VOID_ELEMS[right_tag_name] then
-			local root_elem, leaf_elem = breadcrumb_to_built_elem(left)
-			leaf_elem[SYM_CHILDREN][1] = BuiltElement(right_tag_name, right_attr_map or {})
-			return root_elem
-		end
-
-		local new_breadcrumb = copy_breadcrumb(left)
-		append_elem_to_breadcrumb(new_breadcrumb, right_tag_name, right_attr_map)
-		return new_breadcrumb
-	elseif right_mt == Breadcrumb_mt then
-		return connect_breadcrumbs(left, right)
-	end
-
-	local root_elem, leaf_elem = breadcrumb_to_built_elem(left)
-	leaf_elem[SYM_CHILDREN][1] = right
-	return root_elem
-end
-
-
----@param left BareElement | BuildingElement | any
----@param right any | BareElement | BuildingElement
----@return Breadcrumb | BuiltElement
-local function elem_div(left, right)
-	local left_mt = getmt(left)
-	if left_mt ~= BareElement_mt and left_mt ~= BuildingElement_mt then
-		error('attempt to div a '..type(left)..' with an element', 2)
-	end
-	local tag_name = left[SYM_TAG_NAME]
-	if VOID_ELEMS[tag_name] then
-		error('attempt to perform division on a void element', 2)
-	end
-	return breadcrumb_div(Breadcrumb({tag_name}, {rawget(left, SYM_ATTR_MAP)}), right)
-end
-
-
 local function error_wrong_index()
 	error('attempt to access properties of a unbuilt element', 2)
 end
@@ -585,151 +219,476 @@ local function error_wrong_newindex()
 end
 
 
-BareElement_mt = node_mts:register {
-	__tostring = bare_elem_to_string,  --> string
-	__index = new_building_elem_by_shorthand_attrs,  --> BuildingElement
-	__call = new_built_elem_from_props,  --> BuiltElement
-	__div = elem_div,  --> Breadcrumb | BuiltElement
-	__newindex = error_wrong_newindex,
-}
-BuildingElement_mt = node_mts:register {
-	__tostring = elem_to_string,  --> string
-	__call = new_built_elem_from_props,  --> BuiltElement
-	__div = elem_div,  --> Breadcrumb | BuiltElement
-	__index = error_wrong_index,
-	__newindex = error_wrong_newindex,
-}
-BuiltElement_mt = node_mts:register {
-	__tostring = elem_to_string,  --> string
-	__index = get_elem_prop,
-	__newindex = set_elem_prop,
-	__div = function ()
-		error('attempt to perform division on a built element', 2)
-	end,
-}
-Breadcrumb_mt = node_mts:register {
-	__tostring = breadcrumb_to_string,  --> string
-	__call = function (self, props)  --> BuiltElement
-		local root_elem, leaf_elem = breadcrumb_to_built_elem(self)
-		local new_leaf_elem = new_built_elem_from_props(leaf_elem, props)
-		leaf_elem[SYM_ATTR_MAP] = new_leaf_elem[SYM_ATTR_MAP]
-		leaf_elem[SYM_CHILDREN] = new_leaf_elem[SYM_CHILDREN]
-		return root_elem
-	end,
-	__div = function (left, right)  --> Breadcrumb | BuiltElement
-		if getmt(left) ~= Breadcrumb_mt then
-			error('attempt to div a '..type(left)..' with an breadcrumb', 2)
-		end
-		return breadcrumb_div(left, right)
-	end,
-	__index = error_wrong_index,
-	__newindex = error_wrong_newindex,
-}
+---@param config {void_elements: {[string]: boolean}, raw_text_elements: {[string]: boolean}}?
+local function ACandy(config)
+	config = config or {}
+	local void_elems = utils.list_to_bool_dict(config.void_elements or default_void_elems)
+	local raw_text_elems = utils.list_to_bool_dict(config.raw_text_elements or default_raw_text_elems)
+
+	---A BareElement is an Element without any properties except tag name, e.g.,
+	---`acandy.div`. It is immutable and can be cached and reused.
+	---Indexing a BareElement would return a BuildingElement, and calling it would
+	---return a BuiltElement. Both methods would not change the element itself.
+	---
+	---Example:
+	---```lua
+	---local bare_div = a.div
+	---```
+	---@class BareElement
+
+	---A BuildingElement is an Element derived from attribute shorthand syntax. The
+	---shorthand is a string of id and space-separated class names, and the syntax
+	---is to index the BareElement with a shorthand string, i.e. to put it inside
+	---the brackets followed after the tag name, e.g. `acandy.div['#id cls1 cls2']`.
+	---
+	---Example:
+	---```lua
+	---local building_div = a.div['#id cls1 cls2']
+	---```
+	---
+	---Similar to BareElements, a BuildingElement can be called to get a
+	---BuiltElement with properties set.
+	---@class BuildingElement
+
+	---A BuiltElement is an Element derived from a BareElement or a BuildingElement
+	---by calling it, which would return the BuiltElement with properties set.
+	---
+	---```lua
+	---local built_pre1 = a.pre {
+	---	class = 'lang-lua';
+	---	"print('Hello, ACandy!')",
+	---}
+	---
+	---local built_pre2 = a.pre['lang-lua'] "print('Hello, ACandy!')"
+	---```
+	---
+	---Although named "Built", it is still mutable. Its properties can be changed by
+	---assigning.
+	---@class BuiltElement
+
+	---@class Breadcrumb
 
 
-local a = setmt({}, {
-	---When indexing a uncached tag name, return a constructor of that element.
-	---@param key string
+	local BareElement_mt  ---@type metatable
+	local BuiltElement_mt  ---@type metatable
+	local BuildingElement_mt  ---@type metatable
+
+
+	---@param tag_name string
 	---@return BareElement
-	__index = function (self, key)
-		if not utils.is_html_tag_name(key) then
-			error('invalid tag name: '..tostring(key), 2)
-		end
-
-		local lower_key = key:lower()
-		local bare_elem
-		if lower_key ~= key and HTML_ELEMS[lower_key] then
-			bare_elem = rawget(self, lower_key)
-			if not bare_elem then
-				bare_elem = BareElement(lower_key)
-				self[lower_key] = bare_elem
-			end
+	local function BareElement(tag_name)
+		local str
+		if void_elems[tag_name] then
+			str = '<'..tag_name..'>'
 		else
-			bare_elem = BareElement(key)
+			str = '<'..tag_name..'></'..tag_name..'>'
 		end
-		self[key] = bare_elem
-		return bare_elem
-	end,
-})
+		local elem = {
+			[SYM_TAG_NAME] = tag_name,  ---@type string
+			[SYM_STRING] = str,  ---@type string
+		}
+		return setmt(elem, BareElement_mt)
+	end
 
 
-local some = setmt({}, {
-	__index = function (_, key)
-		local bare_elem = a[key]
-		local mt = {}
+	---@param tag_name string
+	---@param attr_map {[string]: string | number | boolean}
+	---@return BuildingElement
+	local function BuildingElement(tag_name, attr_map)
+		local elem = {
+			[SYM_TAG_NAME] = tag_name,
+			[SYM_ATTR_MAP] = attr_map,
+			[SYM_CHILDREN] = not void_elems[tag_name] and {} or nil,
+		}
+		return setmt(elem, BuildingElement_mt)
+	end
 
-		function mt:__index(shorthand)
-			local building_elem = bare_elem[shorthand]
-			return function (...)
-				return setmt(utils.map_varargs(building_elem, ...), Fragment_mt)
+
+	---@param tag_name string
+	---@param attr_map {[string]: string | number | boolean}
+	---@param children? any[]
+	---@return BuiltElement
+	local function BuiltElement(tag_name, attr_map, children)
+		assert(not (void_elems[tag_name] and children), 'void elements cannot have children')
+		assert(void_elems[tag_name] or type(children) == 'table', 'non-void elements must have children')
+		local elem = {
+			[SYM_TAG_NAME] = tag_name,
+			[SYM_ATTR_MAP] = attr_map,
+			[SYM_CHILDREN] = children,
+		}
+		return setmt(elem, BuiltElement_mt)
+	end
+
+
+	---Convert the object into HTML code.
+	---@param self BuildingElement | BuiltElement
+	---@return string
+	local function elem_to_string(self)
+		local tag_name = self[SYM_TAG_NAME]
+
+		-- format open tag
+		local result = {'<', tag_name}
+		extend_str_buff_with_attrs(result, self[SYM_ATTR_MAP])
+		result[#result+1] = '>'
+
+		-- return without children or close tag when being a void element
+		-- void element: https://developer.mozilla.org/en-US/docs/Glossary/Void_element
+		if void_elems[tag_name] then
+			return concat(result)
+		end
+
+		-- format children
+		extend_str_buff_with_frag(result, self[SYM_CHILDREN], nil, raw_text_elems[tag_name])
+		-- format close tag
+		result[#result+1] = '</'
+		result[#result+1] = tag_name
+		result[#result+1] = '>'
+
+		return concat(result)
+	end
+
+
+	---Return tag name, attribute or child node depending on the key.
+	---@param self BuiltElement
+	---@param key string | number
+	local function get_elem_prop(self, key)
+		if key == 'tag_name' then
+			return self[SYM_TAG_NAME]
+		elseif key == 'children' then
+			local children = rawget(self, SYM_CHILDREN)
+			return children and setmt(children, Fragment_mt)
+		elseif key == 'attributes' then
+			return self[SYM_ATTR_MAP]
+		elseif type(key) == 'string' then
+			-- e.g. `elem.class`
+			return self[SYM_ATTR_MAP][key]
+		elseif type(key) == 'number' then
+			-- e.g. `elem[1]`
+			local children = rawget(self, SYM_CHILDREN)
+			return children and children[key]  -- no error for ipairs
+		end
+
+		error("element property key's type is neither 'string' nor 'number'", 2)
+	end
+
+
+	---@param self BareElement | BuildingElement | BuiltElement
+	---@param props any
+	---@return BuiltElement
+	local function new_built_elem_from_props(self, props)
+		local tag_name = self[SYM_TAG_NAME]
+		local base_attr_map = rawget(self, SYM_ATTR_MAP)
+		local new_attr_map = base_attr_map and utils.copy_pairs(base_attr_map) or {}
+		local container_level = container_level_of(props)
+
+		if void_elems[tag_name] then  -- void element, e.g. <br>, <img>
+			if container_level == 2 then
+				-- set attributes
+				for k, v in pairs(props) do
+					if type(k) == 'string' then
+						if not utils.is_html_attr_name(k) then
+							error('invalid attribute name: '..k, 2)
+						end
+						new_attr_map[k] = v
+					end
+				end
 			end
+			return BuiltElement(tag_name, new_attr_map)
 		end
 
-		function mt:__call(...)
-			return setmt(utils.map_varargs(bare_elem, ...), Fragment_mt)
+		local new_children = {}
+		if container_level == 2 then
+			for k, v in pairs(props) do
+				local t = type(k)
+				if t == 'number' then
+					new_children[k] = v
+				elseif t == 'string' then
+					if not utils.is_html_attr_name(k) then
+						error('invalid attribute name: '..k, 2)
+					end
+					new_attr_map[k] = v
+				end
+			end
+		elseif container_level == 1 then
+			utils.copy_ipairs(props, new_children)
+		else  -- treat as a single child
+			new_children[1] = props
 		end
 
-		return setmt({}, mt)
+		return BuiltElement(tag_name, new_attr_map, new_children)
+	end
+
+
+	---Assign to tag name, attribute or child node depending on the key.
+	---@param self BuildingElement | BuiltElement
+	---@param key string | number
+	---@param val any
+	local function set_elem_prop(self, key, val)
+		if key == 'tag_name' then
+			-- e.g., elem.tag_name = 'div'
+			if not utils.is_html_tag_name(val) then
+				error('invalid tag name: '..val, 2)
+			end  ---@cast val string
+
+			val = val:lower()
+
+			if self[SYM_TAG_NAME] == val then return end
+
+			self[SYM_TAG_NAME] = val
+			-- create/delete children table based on whether the element is a void element
+			if void_elems[val] then
+				rawset(self, SYM_CHILDREN, nil)
+			elseif not rawget(self, SYM_CHILDREN) then
+				rawset(self, SYM_CHILDREN, {})
+			end
+		elseif key == 'children' or key == 'attributes' then
+			error('attempt to replace the '..key..' table of the element')
+		elseif type(key) == 'string' then
+			-- e.g., elem.class = 'content'
+			if not utils.is_html_attr_name(key) then
+				error('invalid attribute name: '..key, 2)
+			end
+			self[SYM_ATTR_MAP][key] = val
+		elseif type(key) == 'number' then
+			-- e.g., elem[1] = 'some text'
+			local children = rawget(self, SYM_CHILDREN)
+			if not children then
+				error('attempt to assign child on a void element', 2)
+			end
+			children[key] = val
+		else
+			error("element property key's type is neither 'string' nor 'number'", 2)
+		end
+	end
+
+
+	local Breadcrumb_mt  ---@type metatable
+
+	---@param tag_names string[]
+	---@param attr_maps ({[string]: string | number | boolean} | nil)[]
+	---@return Breadcrumb
+	local function Breadcrumb(tag_names, attr_maps)
+		return setmt({
+			[SYM_TAG_NAME] = tag_names,
+			[SYM_ATTR_MAP] = attr_maps,
+		}, Breadcrumb_mt)
+	end
+
+	---@param breadcrumb Breadcrumb
+	---@return BuiltElement root_elem, BuiltElement leaf_elem
+	local function breadcrumb_to_built_elem(breadcrumb)
+		local tag_names = breadcrumb[SYM_TAG_NAME]
+		local attr_maps = breadcrumb[SYM_ATTR_MAP]
+		local n = #tag_names
+		local leaf_elem = BuiltElement(tag_names[n], attr_maps[n] or {}, {})
+		local parent_elem = leaf_elem
+		for i = n - 1, 1, -1 do
+			parent_elem = BuiltElement(tag_names[i], attr_maps[i] or {}, {parent_elem})
+		end
+		return parent_elem, leaf_elem
+	end
+
+
+	---@param left Breadcrumb
+	---@param right any
+	---@return Breadcrumb | BuiltElement
+	local function breadcrumb_div(left, right)
+		local right_mt = getmt(right)
+
+		if right_mt == BareElement_mt or right_mt == BuildingElement_mt then
+			local right_tag_name = right[SYM_TAG_NAME]
+			local right_attr_map = rawget(right, SYM_ATTR_MAP)
+
+			if void_elems[right_tag_name] then
+				local root_elem, leaf_elem = breadcrumb_to_built_elem(left)
+				leaf_elem[SYM_CHILDREN][1] = BuiltElement(right_tag_name, right_attr_map or {})
+				return root_elem
+			end
+
+			local new_tag_names, new_attr_maps = clone_breadcrumb_tags_and_attrs(left)
+			local n = #new_tag_names + 1
+			new_tag_names[n] = right_tag_name
+			new_attr_maps[n] = right_attr_map
+			return Breadcrumb(new_tag_names, new_attr_maps)
+		elseif right_mt == Breadcrumb_mt then
+			return Breadcrumb(connect_breadcrumbs(left, right))
+		end
+
+		local root_elem, leaf_elem = breadcrumb_to_built_elem(left)
+		leaf_elem[SYM_CHILDREN][1] = right
+		return root_elem
+	end
+
+
+	---@param left BareElement | BuildingElement | any
+	---@param right any | BareElement | BuildingElement
+	---@return Breadcrumb | BuiltElement
+	local function elem_div(left, right)
+		local left_mt = getmt(left)
+		if left_mt ~= BareElement_mt and left_mt ~= BuildingElement_mt then
+			error('attempt to div a '..type(left)..' with an element', 2)
+		end
+		local tag_name = left[SYM_TAG_NAME]
+		if void_elems[tag_name] then
+			error('attempt to perform division on a void element', 2)
+		end
+		return breadcrumb_div(Breadcrumb({tag_name}, {rawget(left, SYM_ATTR_MAP)}), right)
+	end
+
+	BareElement_mt = node_mts:register {
+		__tostring = SYM_STRING.getter,  --> string
+		---Semantic sugar for setting attributes.
+		---e.g. `local elem = acandy.div['#id cls1 cls2']`
+		---@param self BareElement
+		---@param attrs string | table
+		---@return BuildingElement
+		__index = function (self, attrs)
+			local attr_map
+			if type(attrs) == 'string' then
+				attr_map = utils.parse_shorthand_attrs(attrs)
+			elseif container_level_of(attrs) == 2 then
+				attr_map = {}
+				for k, v in pairs(attrs) do
+					if type(k) == 'string' then
+						if not utils.is_html_attr_name(k) then
+							error('invalid attribute name: '..k, 2)
+						end
+						attr_map[k] = v
+					end
+				end
+			else
+				error('invalid attributes: '..tostring(attrs), 2)
+			end
+			return BuildingElement(self[SYM_TAG_NAME], attr_map)
+		end,
+		__call = new_built_elem_from_props,  --> BuiltElement
+		__div = elem_div,  --> Breadcrumb | BuiltElement
+		__newindex = error_wrong_newindex,
+	}
+	BuildingElement_mt = node_mts:register {
+		__tostring = elem_to_string,  --> string
+		__call = new_built_elem_from_props,  --> BuiltElement
+		__div = elem_div,  --> Breadcrumb | BuiltElement
+		__index = error_wrong_index,
+		__newindex = error_wrong_newindex,
+	}
+	BuiltElement_mt = node_mts:register {
+		__tostring = elem_to_string,  --> string
+		__index = get_elem_prop,
+		__newindex = set_elem_prop,
+		__div = function ()
+			error('attempt to perform division on a built element', 2)
+		end,
+	}
+	Breadcrumb_mt = node_mts:register {
+		__tostring = breadcrumb_to_string,  --> string
+		__call = function (self, props)  --> BuiltElement
+			local root_elem, leaf_elem = breadcrumb_to_built_elem(self)
+			local new_leaf_elem = new_built_elem_from_props(leaf_elem, props)
+			leaf_elem[SYM_ATTR_MAP] = new_leaf_elem[SYM_ATTR_MAP]
+			leaf_elem[SYM_CHILDREN] = new_leaf_elem[SYM_CHILDREN]
+			return root_elem
+		end,
+		__div = function (left, right)  --> Breadcrumb | BuiltElement
+			if getmt(left) ~= Breadcrumb_mt then
+				error('attempt to div a '..type(left)..' with an breadcrumb', 2)
+			end
+			return breadcrumb_div(left, right)
+		end,
+		__index = error_wrong_index,
+		__newindex = error_wrong_newindex,
+	}
+
+
+	local a = setmt({}, {
+		---When indexing a uncached tag name, return a constructor of that element.
+		---@param key string
+		---@return BareElement
+		__index = function (self, key)
+			if not utils.is_html_tag_name(key) then
+				error('invalid tag name: '..tostring(key), 2)
+			end
+
+			local lower_key = key:lower()
+			local bare_elem
+			if lower_key ~= key then
+				bare_elem = rawget(self, lower_key)
+				if not bare_elem then
+					bare_elem = BareElement(lower_key)
+					self[lower_key] = bare_elem
+				end
+			else
+				bare_elem = BareElement(key)
+			end
+			self[key] = bare_elem
+			return bare_elem
+		end,
+	})
+
+	local some = setmt({}, {
+		__index = function (_, key)
+			local bare_elem = a[key]
+			local mt = {}
+
+			function mt:__index(shorthand)
+				local building_elem = bare_elem[shorthand]
+				return function (...)
+					return setmt(utils.map_varargs(building_elem, ...), Fragment_mt)
+				end
+			end
+
+			function mt:__call(...)
+				return setmt(utils.map_varargs(bare_elem, ...), Fragment_mt)
+			end
+
+			return setmt({}, mt)
+		end,
+	})
+
+	return {
+		a = a,
+		some = some,
+		-- classes
+		Comment = classes.Comment,
+		Doctype = classes.Doctype,
+		Fragment = Fragment,
+		Raw = classes.Raw,
+		-- functions
+		extend_env = function (env)
+			return utils.extend_env_with_elem_entry(env, a)
+		end,
+		to_extended_env = function (env)
+			return utils.to_extended_env_with_elem_entry(env, a)
+		end,
+	}
+end
+
+local ACANDY_EXPORTED_NAMES = {
+	a = true,
+	some = true,
+	-- classes
+	Comment = true,
+	Doctype = true,
+	Fragment = true,
+	Raw = true,
+	-- functions
+	extend_env = true,
+	to_extended_env = true,
+}
+
+return setmt({
+	ACandy = ACandy,
+}, {
+	__index = function (self, k)
+		if not ACANDY_EXPORTED_NAMES[k] then
+			return nil
+		end
+		local default_acandy = ACandy()
+		utils.copy_pairs(default_acandy, self)
+		assert(
+			default_acandy[k] ~= nil,
+			('`acandy[%q]` should exist but not found, please contact the author'):format(k)
+		)
+		return default_acandy[k]
 	end,
 })
-
-
----@param base_index table | (fun(t: any, k: any): any) | nil
----@return fun(t: any, k: any): any
-local function to_extended_index(base_index)
-	local function fallback(_t, k)
-		if utils.is_lua_reserved_name(k) then return nil end
-		return a[k]
-	end
-
-	if not base_index then
-		return fallback
-	elseif type(base_index) == "function" then
-		return function (t, k)
-			local v = base_index(t, k)
-			if v ~= nil then return v end
-			return fallback(t, k)
-		end
-	end
-	return function (t, k)
-		local v = base_index[k]
-		if v ~= nil then return v end
-		return fallback(t, k)
-	end
-end
-
----Extend the environment in place with `acandy.a` as `__index`.
----@param env table # the environment to be extended, e.g. `_ENV`, `_G`
-local function extend_env(env)
-	local mt = getmt(env)
-	if mt then
-		rawset(mt, '__index', to_extended_index(rawget(mt, '__index')))
-	else
-		setmt(env, {__index = to_extended_index(nil)})
-	end
-end
-
----Return a new environment based on `env` with `acandy.a` as `__index`.
----@param env table # the environment on which the new environment is based, e.g. `_ENV`, `_G`
----@return table
-local function to_extended_env(env)
-	local base_mt = getmt(env)
-	local new_mt = base_mt and utils.raw_shallow_copy(base_mt) or {}
-	new_mt.__index = to_extended_index(new_mt.__index)
-	return setmt(utils.raw_shallow_copy(env), new_mt)
-end
-
-
-return {
-	-- namespaces
-	a = a,
-	some = some,
-	-- classes
-	Comment = classes.Comment,
-	Doctype = classes.Doctype,
-	Fragment = Fragment,
-	Raw = classes.Raw,
-	-- functions
-	extend_env = extend_env,
-	to_extended_env = to_extended_env,
-}
