@@ -407,3 +407,49 @@ describe('`acandy.Raw`', function ()
 		end)
 	end)
 end)
+
+describe('configured ACandy', function ()
+	local configured_acandy = acandy.ACandy('html', function (config)
+		-- add a void element
+		config.void_elements['my-void-element'] = true
+		-- remove `br` from void elements
+		config.void_elements.br = nil
+		-- add a raw text element
+		config.raw_text_elements['my-raw-text-element'] = true
+		-- remove `script` from raw text elements
+		config.raw_text_elements.script = nil
+	end)
+	local configured_a = configured_acandy.a
+
+	it('changes behavior', function ()
+		local frag = configured_acandy.Fragment {
+			configured_a['my-void-element'],
+			configured_a.br,
+			configured_a['my-raw-text-element'] '< > &',
+			configured_a.script 'let val = 2 > 1',
+		}
+		assert.are.equal(
+			tostring(frag),
+			'<my-void-element>'
+			..'<br></br>'
+			..'<my-raw-text-element>< > &</my-raw-text-element>'
+			..'<script>let val = 2 &gt; 1</script>'
+		)
+	end)
+
+	it('does not affect the original acandy', function ()
+		local frag = acandy.Fragment {
+			a['my-void-element'],
+			a.br,
+			a['my-raw-text-element'] '< > &',
+			a.script 'let val = 2 > 1',
+		}
+		assert.are.equal(
+			tostring(frag),
+			'<my-void-element></my-void-element>'
+			..'<br>'
+			..'<my-raw-text-element>&lt; &gt; &amp;</my-raw-text-element>'
+			..'<script>let val = 2 > 1</script>'
+		)
+	end)
+end)
