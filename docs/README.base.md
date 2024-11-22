@@ -527,7 +527,7 @@ tostring(acandy.Doctype.HTML)  --> '<!DOCTYPE html>'
 ### `acandy.extend_env`
 
 ```lua
-function acandy.extend_env(env: table) -> nil
+function acandy.extend_env(env: table): ()
 ```
 
 Extend the environment in place with `acandy.a` as `__index`, e.g., `_ENV`. This makes it possible to directly use the tag name rather than tediously type `a.`, unless there is a naming conflict with local variables or global variables.  
@@ -582,7 +582,7 @@ print(
 ### `acandy.to_extended_env`
 
 ```lua
-function acandy.to_extended_env(env: table) -> table
+function acandy.to_extended_env(env: table): table
 ```
 
 Similar to `acandy.extend_env`, but returns a new table instead of modifying the original table.  
@@ -628,6 +628,67 @@ print(get_article())
       <p>Paragraph 2</p>
    </main>
 </article>
+```
+
+## Configuration | 配置
+
+ACandy defaults to HTML mode (currently only HTML mode, XML will be supported in the future), and has predefined some HTML void elements and raw text elements (see [config.lua](/config.lua)).  
+ACandy 默认为 HTML 模式（目前只有 HTML 模式，以后将会支持 XML），并预定义了一些 HTML 空元素和原始文本元素（见 [config.lua](/config.lua)）。
+
+ACandy does not support modifying global configuration. To modify the configuration, create a new configured `ACandy` instance. The function signature is as follows.  
+ACandy 不支持修改全局配置，要修改配置，请创建一个配置后的 `ACandy` 实例，其函数签名如下。
+
+```lua
+type Config = {
+   void_elements: { [string]: true },
+   raw_text_elements: { [string]: true },
+}
+function acandy.ACandy(output_type: 'html', modify_config?: (config: Config) -> ()): table
+```
+
+The `output_type` parameter currently only accepts `'html'`. The `modify_config` parameter (optional) is a function that takes a table as a parameter and has no return value. The table passed to this function is the basis of the new configuration, and you can modify this value in the function, for example:  
+其中，`output_type` 参数目前只能传入 `'html'`。`modify_config` 参数（可选）是一个函数，接收一个表作为参数，无返回值。传入该函数的表是新配置的基础，你可以在函数中修改这个值，例如：
+
+```lua
+local acandy = require('acandy').ACandy('html', function (config)
+   -- add a void element
+   config.void_elements['my-void-element'] = true
+   -- remove `br` from void elements
+   config.void_elements.br = nil
+   -- add a raw text element
+   config.raw_text_elements['my-raw-text-element'] = true
+   -- remove `script` from raw text elements
+   config.raw_text_elements.script = nil
+end)
+local a = acandy.a
+print(
+   acandy.Fragment {
+      a['my-void-element'],
+      a.br,
+      a['my-raw-text-element'] '< > &',
+      a.script 'let val = 2 > 1',
+   }
+)
+```
+
+```html
+<my-void-element>
+<br></br>
+<my-raw-text-element>< > &</my-raw-text-element>
+<script>let val = 2 &gt; 1</script>
+```
+
+To use this configuration throughout the project, you can export the configured `ACandy` instance and import it in other files.  
+要想在整个项目使用这个配置，可以导出配置后的 `ACandy` 实例，然后在其他文件中导入这个实例。
+
+```lua
+-- my_acandy.lua
+return require('acandy').ACandy('html', function (config)
+   -- ...
+end)
+
+-- other files
+local acandy = require('my_acandy')
 ```
 
 ## Concepts | 概念

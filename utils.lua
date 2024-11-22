@@ -60,6 +60,9 @@ function utils.map_varargs(func, ...)
 	return t
 end
 
+---@generic T
+---@param list T[]
+---@return {[T]: true}
 function utils.list_to_bool_dict(list)
 	local dict = {}
 	for _, v in ipairs(list) do

@@ -23,12 +23,9 @@ local rawset = rawset
 local tostring = tostring
 
 local utils = require('.utils')
-local default_void_elems, default_raw_text_elems = (function ()
-	local config = require('.config')
-	return config.void_elements, config.raw_text_elements
-end)()
 local classes = require('.classes')
 local node_mts = classes.node_mts
+local config_module = require('.config')
 
 ---@class Symbol
 
@@ -214,21 +211,23 @@ local function breadcrumb_to_string(self)
 end
 
 
-local function error_wrong_index()
-	error('attempt to access properties of a unbuilt element', 2)
+local function ErrorEmitter(msg, level)
+	return function ()
+		error(msg, level)
+	end
 end
 
-local function error_wrong_newindex()
-	error('attempt to assign properties of a unbuilt element', 2)
-end
+local error_emitters = {
+	unbuilt_elem_index = ErrorEmitter('attempt to access properties of a unbuilt element', 2),
+	unbuilt_elem_newindex = ErrorEmitter('attempt to assign properties of a unbuilt element', 2),
+	built_elem_div = ErrorEmitter('attempt to perform division on a built element', 2),
+}
 
-
----@param config {void_elements: {[string]: boolean}, raw_text_elements: {[string]: boolean}}?
+---@param output_type 'html'
+---@param modify_config fun(config: Config)?
 ---@nodiscard
-local function ACandy(config)
-	config = config or {}
-	local void_elems = utils.list_to_bool_dict(config.void_elements or default_void_elems)
-	local raw_text_elems = utils.list_to_bool_dict(config.raw_text_elements or default_raw_text_elems)
+local function ACandy(output_type, modify_config)
+	local void_elems, raw_text_elems = config_module.parse_config(output_type, modify_config)
 
 	---A BareElement is an Element without any properties except tag name, e.g.,
 	---`acandy.div`. It is immutable and can be cached and reused.
@@ -594,22 +593,20 @@ local function ACandy(config)
 		end,
 		__call = new_built_elem_from_props,  --> BuiltElement
 		__div = elem_div,  --> Breadcrumb | BuiltElement
-		__newindex = error_wrong_newindex,
+		__newindex = error_emitters.unbuilt_elem_newindex,
 	}
 	BuildingElement_mt = node_mts:register {
 		__tostring = elem_to_string,  --> string
 		__call = new_built_elem_from_props,  --> BuiltElement
 		__div = elem_div,  --> Breadcrumb | BuiltElement
-		__index = error_wrong_index,
-		__newindex = error_wrong_newindex,
+		__index = error_emitters.unbuilt_elem_index,
+		__newindex = error_emitters.unbuilt_elem_newindex,
 	}
 	BuiltElement_mt = node_mts:register {
 		__tostring = elem_to_string,  --> string
 		__index = get_elem_prop,
 		__newindex = set_elem_prop,
-		__div = function ()
-			error('attempt to perform division on a built element', 2)
-		end,
+		__div = error_emitters.built_elem_div,
 	}
 	Breadcrumb_mt = node_mts:register {
 		__tostring = breadcrumb_to_string,  --> string
@@ -626,8 +623,8 @@ local function ACandy(config)
 			end
 			return breadcrumb_div(left, right)
 		end,
-		__index = error_wrong_index,
-		__newindex = error_wrong_newindex,
+		__index = error_emitters.unbuilt_elem_index,
+		__newindex = error_emitters.unbuilt_elem_newindex,
 	}
 
 
@@ -699,7 +696,7 @@ local function ACandy(config)
 	---Extend the environment in place with `acandy.a` as `__index`.
 	---@param env table the environment to be extended, e.g. `_ENV`, `_G`
 	function acandy.extend_env(env)
-		return utils.extend_env_with_elem_entry(env, a)
+		utils.extend_env_with_elem_entry(env, a)
 	end
 
 	---Return a new environment based on `env` with `acandy.a` as `__index`.
@@ -734,7 +731,7 @@ local acandy_module = setmt({
 		if not ACANDY_EXPORTED_NAMES[k] then
 			return nil
 		end
-		local default_acandy = ACandy()
+		local default_acandy = ACandy('html')
 		utils.copy_pairs(default_acandy, self)
 		assert(
 			default_acandy[k] ~= nil,

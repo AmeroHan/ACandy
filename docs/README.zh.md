@@ -461,7 +461,7 @@ tostring(acandy.Doctype.HTML)  --> '<!DOCTYPE html>'
 ### `acandy.extend_env`
 
 ```lua
-function acandy.extend_env(env: table) -> nil
+function acandy.extend_env(env: table): ()
 ```
 
 使用 `acandy.a` 作为 `__index` 来扩展传入的环境，例如 `_ENV`。这使得能够直接使用元素名不需要显式地使用 `a.`，除非与局部变量或全局变量有命名冲突。
@@ -514,7 +514,7 @@ print(
 ### `acandy.to_extended_env`
 
 ```lua
-function acandy.to_extended_env(env: table) -> table
+function acandy.to_extended_env(env: table): table
 ```
 
 类似于 `acandy.extend_env`，但返回一个新表而不是修改原表。
@@ -559,6 +559,63 @@ print(get_article())
       <p>Paragraph 2</p>
    </main>
 </article>
+```
+
+## 配置
+
+ACandy 默认为 HTML 模式（目前只有 HTML 模式，以后将会支持 XML），并预定义了一些 HTML 空元素和原始文本元素（见 [config.lua](/config.lua)）。
+
+ACandy 不支持修改全局配置，要修改配置，请创建一个配置后的 `ACandy` 实例，其函数签名如下。
+
+```lua
+type Config = {
+   void_elements: { [string]: true },
+   raw_text_elements: { [string]: true },
+}
+function acandy.ACandy(output_type: 'html', modify_config?: (config: Config) -> ()): table
+```
+
+其中，`output_type` 参数目前只能传入 `'html'`。`modify_config` 参数（可选）是一个函数，接收一个表作为参数，无返回值。传入该函数的表是新配置的基础，你可以在函数中修改这个值，例如：
+
+```lua
+local acandy = require('acandy').ACandy('html', function (config)
+   -- add a void element
+   config.void_elements['my-void-element'] = true
+   -- remove `br` from void elements
+   config.void_elements.br = nil
+   -- add a raw text element
+   config.raw_text_elements['my-raw-text-element'] = true
+   -- remove `script` from raw text elements
+   config.raw_text_elements.script = nil
+end)
+local a = acandy.a
+print(
+   acandy.Fragment {
+      a['my-void-element'],
+      a.br,
+      a['my-raw-text-element'] '< > &',
+      a.script 'let val = 2 > 1',
+   }
+)
+```
+
+```html
+<my-void-element>
+<br></br>
+<my-raw-text-element>< > &</my-raw-text-element>
+<script>let val = 2 &gt; 1</script>
+```
+
+要想在整个项目使用这个配置，可以导出配置后的 `ACandy` 实例，然后在其他文件中导入这个实例。
+
+```lua
+-- my_acandy.lua
+return require('acandy').ACandy('html', function (config)
+   -- ...
+end)
+
+-- other files
+local acandy = require('my_acandy')
 ```
 
 ## 概念
