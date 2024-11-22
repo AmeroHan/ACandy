@@ -41,6 +41,7 @@ local Comment_mt = node_mts:register {
 ---Defined at https://html.spec.whatwg.org/#comments
 ---@param content string?
 ---@return Comment
+---@nodiscard
 function classes.Comment(content)
 	if content then
 		-- the text must not start with the string ">" or "->",
@@ -79,6 +80,7 @@ classes.Doctype = {
 
 
 ---@class Raw
+---@operator concat(Raw): Raw
 
 local Raw_mt  ---@type metatable
 Raw_mt = node_mts:register {
@@ -97,6 +99,7 @@ Raw_mt = node_mts:register {
 ---Create a Raw object, which would not be encoded when converted to string.
 ---@param content any value to be converted to string by `tostring()`
 ---@return Raw
+---@nodiscard
 function classes.Raw(content)
 	return setmt({[SYM_STRING] = tostring(content)}, Raw_mt)
 end

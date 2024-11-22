@@ -42,6 +42,7 @@ local KEY_TABLE_LIKE = '__acandy_table_like'
 
 ---@param v any
 ---@return integer 1: list-like, 2: table-like, 0: others
+---@nodiscard
 local function container_level_of(v)
 	local mt = getmt(v)
 	if not mt then
@@ -116,10 +117,6 @@ local function extend_str_buff_with_attrs(buff, attr_map, buff_len)
 end
 
 
----ACandy fragment.
----@class Fragment: any[]
-
----@type metatable
 local Fragment_mt = node_mts:register {
 	---Flat and concat the Fragment, returns string.
 	---@param self Fragment
@@ -131,9 +128,12 @@ local Fragment_mt = node_mts:register {
 		extend_str_buff_with_frag(buff, self, 0)
 		return concat(buff)
 	end,
+	---ACandy fragment.
+	---@class Fragment<T>: {[integer]: T}
 	__index = {
 		concat = table.concat,
 		insert = table.insert,
+		---@version <5.1
 		---@diagnostic disable-next-line: deprecated
 		maxn = table.maxn,  -- Lua 5.1 only
 		move = table.move,
@@ -147,6 +147,7 @@ local Fragment_mt = node_mts:register {
 ---Constructor of Fragment.
 ---@param children any?
 ---@return Fragment
+---@nodiscard
 local function Fragment(children)
 	if container_level_of(children) >= 1 then
 		return setmt(utils.copy_ipairs(children), Fragment_mt)
@@ -157,6 +158,7 @@ end
 ---@param breadcrumb Breadcrumb
 ---@return string[] tag_names
 ---@return ({[string]: string | number | boolean} | nil)[] attr_maps
+---@nodiscard
 local function clone_breadcrumb_tags_and_attrs(breadcrumb)
 	local new_tag_names = {}
 	local new_attr_maps = {}
@@ -172,6 +174,7 @@ end
 ---@param breadcrumb2 Breadcrumb
 ---@return string[] tag_names
 ---@return ({[string]: string | number | boolean} | nil)[] attr_maps
+---@nodiscard
 local function connect_breadcrumbs(breadcrumb1, breadcrumb2)
 	local new_tag_names, new_attr_maps = clone_breadcrumb_tags_and_attrs(breadcrumb1)
 	local len = #new_tag_names
@@ -186,6 +189,7 @@ end
 
 ---@param self Breadcrumb
 ---@return string
+---@nodiscard
 local function breadcrumb_to_string(self)
 	local tag_names = self[SYM_TAG_NAME]
 	local attr_maps = self[SYM_ATTR_MAP]
@@ -220,6 +224,7 @@ end
 
 
 ---@param config {void_elements: {[string]: boolean}, raw_text_elements: {[string]: boolean}}?
+---@nodiscard
 local function ACandy(config)
 	config = config or {}
 	local void_elems = utils.list_to_bool_dict(config.void_elements or default_void_elems)
@@ -235,6 +240,10 @@ local function ACandy(config)
 	---local bare_div = a.div
 	---```
 	---@class BareElement
+	---@operator div(BareElement | BuildingElement | Breadcrumb): Breadcrumb
+	---@operator div(any): BuiltElement
+	---@overload fun(props: any): BuiltElement
+	---@field [string | {[string]: string | number | boolean}] BuildingElement
 
 	---A BuildingElement is an Element derived from attribute shorthand syntax. The
 	---shorthand is a string of id and space-separated class names, and the syntax
@@ -249,6 +258,9 @@ local function ACandy(config)
 	---Similar to BareElements, a BuildingElement can be called to get a
 	---BuiltElement with properties set.
 	---@class BuildingElement
+	---@operator div(BareElement | BuildingElement | Breadcrumb): Breadcrumb
+	---@operator div(any): BuiltElement
+	---@overload fun(props: any): BuiltElement
 
 	---A BuiltElement is an Element derived from a BareElement or a BuildingElement
 	---by calling it, which would return the BuiltElement with properties set.
@@ -265,8 +277,16 @@ local function ACandy(config)
 	---Although named "Built", it is still mutable. Its properties can be changed by
 	---assigning.
 	---@class BuiltElement
+	---@field tag_name string
+	---@field attributes {[string]: string | number | boolean}
+	---@field children Fragment?
+	---@field [string] string | number | boolean attribute value
+	---@field [number] any child node
 
 	---@class Breadcrumb
+	---@operator div(BareElement | BuildingElement | Breadcrumb): Breadcrumb
+	---@operator div(any): BuiltElement
+	---@overload fun(props: any): BuiltElement
 
 
 	local BareElement_mt  ---@type metatable
@@ -276,6 +296,7 @@ local function ACandy(config)
 
 	---@param tag_name string
 	---@return BareElement
+	---@nodiscard
 	local function BareElement(tag_name)
 		local str
 		if void_elems[tag_name] then
@@ -294,6 +315,7 @@ local function ACandy(config)
 	---@param tag_name string
 	---@param attr_map {[string]: string | number | boolean}
 	---@return BuildingElement
+	---@nodiscard
 	local function BuildingElement(tag_name, attr_map)
 		local elem = {
 			[SYM_TAG_NAME] = tag_name,
@@ -308,6 +330,7 @@ local function ACandy(config)
 	---@param attr_map {[string]: string | number | boolean}
 	---@param children? any[]
 	---@return BuiltElement
+	---@nodiscard
 	local function BuiltElement(tag_name, attr_map, children)
 		assert(not (void_elems[tag_name] and children), 'void elements cannot have children')
 		assert(void_elems[tag_name] or type(children) == 'table', 'non-void elements must have children')
@@ -323,6 +346,7 @@ local function ACandy(config)
 	---Convert the object into HTML code.
 	---@param self BuildingElement | BuiltElement
 	---@return string
+	---@nodiscard
 	local function elem_to_string(self)
 		local tag_name = self[SYM_TAG_NAME]
 
@@ -351,6 +375,7 @@ local function ACandy(config)
 	---Return tag name, attribute or child node depending on the key.
 	---@param self BuiltElement
 	---@param key string | number
+	---@nodiscard
 	local function get_elem_prop(self, key)
 		if key == 'tag_name' then
 			return self[SYM_TAG_NAME]
@@ -375,8 +400,9 @@ local function ACandy(config)
 	---@param self BareElement | BuildingElement | BuiltElement
 	---@param props any
 	---@return BuiltElement
+	---@nodiscard
 	local function new_built_elem_from_props(self, props)
-		local tag_name = self[SYM_TAG_NAME]
+		local tag_name = self[SYM_TAG_NAME]  ---@type any
 		local base_attr_map = rawget(self, SYM_ATTR_MAP)
 		local new_attr_map = base_attr_map and utils.copy_pairs(base_attr_map) or {}
 		local container_level = container_level_of(props)
@@ -467,6 +493,7 @@ local function ACandy(config)
 	---@param tag_names string[]
 	---@param attr_maps ({[string]: string | number | boolean} | nil)[]
 	---@return Breadcrumb
+	---@nodiscard
 	local function Breadcrumb(tag_names, attr_maps)
 		return setmt({
 			[SYM_TAG_NAME] = tag_names,
@@ -476,6 +503,7 @@ local function ACandy(config)
 
 	---@param breadcrumb Breadcrumb
 	---@return BuiltElement root_elem, BuiltElement leaf_elem
+	---@nodiscard
 	local function breadcrumb_to_built_elem(breadcrumb)
 		local tag_names = breadcrumb[SYM_TAG_NAME]
 		local attr_maps = breadcrumb[SYM_ATTR_MAP]
@@ -523,12 +551,14 @@ local function ACandy(config)
 	---@param left BareElement | BuildingElement | any
 	---@param right any | BareElement | BuildingElement
 	---@return Breadcrumb | BuiltElement
+	---@nodiscard
 	local function elem_div(left, right)
 		local left_mt = getmt(left)
 		if left_mt ~= BareElement_mt and left_mt ~= BuildingElement_mt then
 			error('attempt to div a '..type(left)..' with an element', 2)
 		end
-		local tag_name = left[SYM_TAG_NAME]
+		---@diagnostic disable-next-line: assign-type-mismatch
+		local tag_name = left[SYM_TAG_NAME]  ---@type string
 		if void_elems[tag_name] then
 			error('attempt to perform division on a void element', 2)
 		end
@@ -559,6 +589,7 @@ local function ACandy(config)
 			else
 				error('invalid attributes: '..tostring(attrs), 2)
 			end
+			---@diagnostic disable-next-line: param-type-mismatch
 			return BuildingElement(self[SYM_TAG_NAME], attr_map)
 		end,
 		__call = new_built_elem_from_props,  --> BuiltElement
@@ -600,6 +631,8 @@ local function ACandy(config)
 	}
 
 
+	---@class ElementEntry
+	---@field [string] BareElement
 	local a = setmt({}, {
 		---When indexing a uncached tag name, return a constructor of that element.
 		---@param key string
@@ -625,6 +658,12 @@ local function ACandy(config)
 		end,
 	})
 
+	---@class SomeBareElements
+	---@field [string] fun(props: any): BuiltElement[]
+	---@overload fun(props: any): BuiltElement[]
+
+	---@class SomeElementsEntry
+	---@field [string] SomeBareElements
 	local some = setmt({}, {
 		__index = function (_, key)
 			local bare_elem = a[key]
@@ -633,11 +672,13 @@ local function ACandy(config)
 			function mt:__index(shorthand)
 				local building_elem = bare_elem[shorthand]
 				return function (...)
+					---@diagnostic disable-next-line: param-type-mismatch
 					return setmt(utils.map_varargs(building_elem, ...), Fragment_mt)
 				end
 			end
 
 			function mt:__call(...)
+				---@diagnostic disable-next-line: param-type-mismatch
 				return setmt(utils.map_varargs(bare_elem, ...), Fragment_mt)
 			end
 
@@ -645,22 +686,31 @@ local function ACandy(config)
 		end,
 	})
 
-	return {
+	---@class ACandy
+	local acandy = {
 		a = a,
 		some = some,
-		-- classes
 		Comment = classes.Comment,
 		Doctype = classes.Doctype,
 		Fragment = Fragment,
 		Raw = classes.Raw,
-		-- functions
-		extend_env = function (env)
-			return utils.extend_env_with_elem_entry(env, a)
-		end,
-		to_extended_env = function (env)
-			return utils.to_extended_env_with_elem_entry(env, a)
-		end,
 	}
+
+	---Extend the environment in place with `acandy.a` as `__index`.
+	---@param env table the environment to be extended, e.g. `_ENV`, `_G`
+	function acandy.extend_env(env)
+		return utils.extend_env_with_elem_entry(env, a)
+	end
+
+	---Return a new environment based on `env` with `acandy.a` as `__index`.
+	---@param env table the environment on which the new environment is based, e.g. `_ENV`, `_G`
+	---@return table
+	---@nodiscard
+	function acandy.to_extended_env(env)
+		return utils.to_extended_env_with_elem_entry(env, a)
+	end
+
+	return acandy
 end
 
 local ACANDY_EXPORTED_NAMES = {
@@ -676,7 +726,8 @@ local ACANDY_EXPORTED_NAMES = {
 	to_extended_env = true,
 }
 
-return setmt({
+---@class ACandyModule: ACandy
+local acandy_module = setmt({
 	ACandy = ACandy,
 }, {
 	__index = function (self, k)
@@ -692,3 +743,4 @@ return setmt({
 		return default_acandy[k]
 	end,
 })
+return acandy_module
