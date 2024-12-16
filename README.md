@@ -246,7 +246,7 @@ elem1(
 )
 ```
 
-Kind of like CSS’s [childe combinator](https://developer.mozilla.org/docs/Web/CSS/Child_combinator) `>`, except that it is used to compose elements rather than select elements.
+Kind of like CSS’s [child combinator](https://developer.mozilla.org/docs/Web/CSS/Child_combinator) `>`, except that it is used to compose elements rather than select elements.
 
 The premise is that `elem1`..`elemN` are not [void elements](https://developer.mozilla.org/docs/Glossary/Void_element) or [constructed elements](#element-instance-properties).
 
