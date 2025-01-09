@@ -1,12 +1,9 @@
 local utils = {}
 
-local getmt = getmetatable
-local setmt = setmetatable
 local pairs = pairs
 local ipairs = ipairs
 local s_gsub = string.gsub
 
-local utf8 = utf8 or require('.utf8_polyfill')
 
 ---Shallow copy a table's sequence part using `ipairs`.
 ---@generic T
@@ -94,19 +91,6 @@ function utils.html_encode(str)
 	return (s_gsub(str, '\194?[\160&<>]', ENTITY_ENCODE_MAP))
 end
 
----Return truthy value when `name` is a valid XML name, otherwise falsy value.
----
----Defined at:
----- https://www.w3.org/TR/xml/#NT-Name
----- https://www.w3.org/TR/xml11/#NT-Name
----
----TODO: non-ASCII support
----@param name any
----@return any
-function utils.is_xml_name(name)
-	return type(name) == 'string' and name:find('^[:%a_][:%w_%-%.]*$')
-end
-
 local NON_CUSTOM_NAMES = {
 	['annotation-xml'] = true,
 	['color-profile'] = true,
@@ -117,6 +101,8 @@ local NON_CUSTOM_NAMES = {
 	['font-face-name'] = true,
 	['missing-glyph'] = true,
 }
+
+--[[ Unneeded for MW
 ---defined at https://html.spec.whatwg.org/#prod-pcenchar
 local PCEN_CHAR_RANGES = {
 	{0x2D,    0x2E},  -- '-', '.'
@@ -147,6 +133,7 @@ local function is_pcen_char_code(code_point)
 	end
 	return false
 end
+]]
 
 ---Return truthy value when `name` is a valid HTML tag name, otherwise falsy value.
 ---
@@ -163,6 +150,8 @@ function utils.is_html_tag_name(name)
 	elseif NON_CUSTOM_NAMES[name:lower()] then
 		return true
 	end
+
+	--[[ Unneeded for MW
 	---@cast name string
 	local subs1, subs2 = name:match('^%l(.*)%-(.*)$')
 	if not subs1 then
@@ -184,6 +173,8 @@ function utils.is_html_tag_name(name)
 	end
 
 	return validate(subs1) and validate(subs2)
+	]]
+	return false
 end
 
 ---Return truthy value when `name` is a valid HTML attribute name, otherwise falsy value.
@@ -199,14 +190,6 @@ function utils.is_html_attr_name(name)
 		return false
 	end
 	return true
-end
-
----Return truthy value when `name` is reserved by Lua (e.g., '_G', '_PROMPT'),
----otherwise falsy value.
----@param name any
----@return any
-function utils.is_lua_reserved_name(name)
-	return type(name) == 'string' and name:find('^_[%u%d]+$')
 end
 
 ---@param str string
@@ -232,57 +215,6 @@ function utils.parse_shorthand_attrs(str)
 		id = id,
 		class = class ~= '' and class or nil,
 	}
-end
-
----Return a new `__index` metamethod that extends `base_index` with `elem_entry`.
----@param base_index table | (fun(t: any, k: any): any) | nil
----@param elem_entry table `acandy.a`
----@return fun(t: any, k: any): any
-local function to_extended_index(base_index, elem_entry)
-	local function fallback(_t, k)
-		if utils.is_lua_reserved_name(k) then
-			return nil  -- avoid indexing `a.__PROMPT` in interactive mode
-		end
-		return elem_entry[k]
-	end
-
-	if not base_index then
-		return fallback
-	elseif type(base_index) == "function" then
-		return function (t, k)
-			local v = base_index(t, k)
-			if v ~= nil then return v end
-			return fallback(t, k)
-		end
-	end
-	return function (t, k)
-		local v = base_index[k]
-		if v ~= nil then return v end
-		return fallback(t, k)
-	end
-end
-
----Extend the environment in place with `acandy.a` as `__index`.
----@param env table the environment to be extended, e.g. `_ENV`, `_G`
----@param elem_entry table `acandy.a`
-function utils.extend_env_with_elem_entry(env, elem_entry)
-	local mt = getmt(env)
-	if mt then
-		rawset(mt, '__index', to_extended_index(rawget(mt, '__index'), elem_entry))
-	else
-		setmt(env, {__index = to_extended_index(nil, elem_entry)})
-	end
-end
-
----Return a new environment based on `env` with `acandy.a` as `__index`.
----@param env table the environment on which the new environment is based, e.g. `_ENV`, `_G`
----@param elem_entry table `acandy.a`
----@return table
-function utils.to_extended_env_with_elem_entry(env, elem_entry)
-	local base_mt = getmt(env)
-	local new_mt = base_mt and utils.raw_shallow_copy(base_mt) or {}
-	new_mt.__index = to_extended_index(new_mt.__index, elem_entry)
-	return setmt(utils.raw_shallow_copy(env), new_mt)
 end
 
 return utils

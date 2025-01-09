@@ -22,10 +22,10 @@ local rawget = rawget
 local rawset = rawset
 local tostring = tostring
 
-local utils = require('.utils')
-local classes = require('.classes')
+local utils = require('Module:ACandy/utils')
+local classes = require('Module:ACandy/classes')
 local node_mts = classes.node_mts
-local config_module = require('.config')
+local config_module = require('Module:ACandy/config')
 
 ---@class Symbol
 
@@ -688,24 +688,9 @@ local function ACandy(output_type, modify_config)
 		a = a,
 		some = some,
 		Comment = classes.Comment,
-		Doctype = classes.Doctype,
 		Fragment = Fragment,
 		Raw = classes.Raw,
 	}
-
-	---Extend the environment in place with `acandy.a` as `__index`.
-	---@param env table the environment to be extended, e.g. `_ENV`, `_G`
-	function acandy.extend_env(env)
-		utils.extend_env_with_elem_entry(env, a)
-	end
-
-	---Return a new environment based on `env` with `acandy.a` as `__index`.
-	---@param env table the environment on which the new environment is based, e.g. `_ENV`, `_G`
-	---@return table
-	---@nodiscard
-	function acandy.to_extended_env(env)
-		return utils.to_extended_env_with_elem_entry(env, a)
-	end
 
 	return acandy
 end
@@ -715,12 +700,8 @@ local ACANDY_EXPORTED_NAMES = {
 	some = true,
 	-- classes
 	Comment = true,
-	Doctype = true,
 	Fragment = true,
 	Raw = true,
-	-- functions
-	extend_env = true,
-	to_extended_env = true,
 }
 
 ---@class ACandyModule: ACandy

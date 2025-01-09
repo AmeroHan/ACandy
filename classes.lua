@@ -59,26 +59,6 @@ function classes.Comment(content)
 	return setmt({[SYM_STRING] = content}, Comment_mt)
 end
 
----@class Doctype
--- Specs:
---   HTML:
---     definition: https://html.spec.whatwg.org/#the-doctype
---     serialization: https://html.spec.whatwg.org/#serialising-html-fragments
---   XML: https://www.w3.org/TR/xml/#sec-prolog-dtd
--- TODO: support any doctype
-
-local Doctype_mt = node_mts:register {
-	__tostring = function ()
-		return '<!DOCTYPE html>'
-	end,
-}
-classes.Doctype = {
-	---HTML5 doctype shortcut.
-	---@type Doctype
-	HTML = setmetatable({}, Doctype_mt),
-}
-
-
 ---@class Raw
 ---@operator concat(Raw): Raw
 
