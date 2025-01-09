@@ -111,7 +111,7 @@ The output of this code, formatted (the same below), is as follows.
 > - 子结点并不必须是元素或字符串——虽然这里只展示了这两类，一切能 `tostring` 的值均可作为子结点。
 
 <code>a.*xxx*</code> is [ASCII case-insensitive](https://infra.spec.whatwg.org/#ascii-case-insensitive), thus `a.div`, `a.Div`, `a.DIV`, etc., are the same value (i.e., `rawequal(a.div, a.Div) == true` and `rawequal(a.div, a.DIV) == true`) and will all become `<div></div>`.  
-<code>a.*xxx*</code> 是 [ASCII 大小写不敏感](https://infra.spec.whatwg.org/#ascii-case-insensitive)的，因此 `a.div`、`a.Div`、`a.DIV`……是同一个值（即 `rawequal(a.div, a.Div) == true`、` rawequal(a.div, a.DIV) == true`），它们都将变成`<div></div>`。
+<code>a.*xxx*</code> 是 [ASCII 大小写不敏感](https://infra.spec.whatwg.org/#ascii-case-insensitive)的，因此 `a.div`、`a.Div`、`a.DIV`……是同一个值（即 `rawequal(a.div, a.Div) == true`、`rawequal(a.div, a.DIV) == true`），它们都将变成`<div></div>`。
 
 ### Attributes | 属性
 
@@ -170,7 +170,7 @@ By the way, tables returned by [`acandy.Fragment`](#acandyfragment) (e.g., `Frag
 顺便一提，由 [`acandy.Fragment`](#acandyfragment) 返回的表（如 `Fragment { 1, 2, 3 }`）是类列表的，因为它们的元表的 `'__acandy_list_like'` 字段被设置为 `true`。
 
 Particularly, if a node has a table type but not considered list-like (e.g., table returned by `a.p { 1, 2, 3 }`), it will be directly converted to string according to the [default rule](#default-case), so make sure `__tostring` metamethod is implemented.  
-特别地，如果一个表不被认为是类列表的，如 `a.p { 1, 2, 3 }` 返回的表，根据[默认规则](默认情形)，它将直接通过 `tostring` 转换为字符串，所以确保它实现了 `__tostring` 元方法。
+特别地，如果一个表不被认为是类列表的，如 `a.p { 1, 2, 3 }` 返回的表，根据[默认规则](#默认情形)，它将直接通过 `tostring` 转换为字符串，所以确保它实现了 `__tostring` 元方法。
 
 ```lua
 local list1 = { '3', '4' }
