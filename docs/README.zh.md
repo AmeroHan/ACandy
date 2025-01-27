@@ -642,7 +642,7 @@ local acandy = require('my_acandy')
 - 满足任意一条：
 
   - `t` 是一个[类表值](#类表值)。
-  - `t` 的元表的 `'__acandy_list_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_table_like = true` 设置）。使用者需要确保 `t` 能够：
+  - `t` 的元表的 `'__acandy_list_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_list_like = true` 设置）。使用者需要确保 `t` 能够：
 
     - 通过 `t[k]` 读取内容；
     - 通过 `#t` 获取序列长度；

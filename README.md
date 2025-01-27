@@ -13,7 +13,7 @@ This work uses <a href="https://semver.org/">Semantic Versioning</a>
 </p>
 </div>
 
-ACandy is a pure Lua module for building HTML, which takes advantage of Lua’s syntactic sugar and metatable, giving an intuitive DSL to build HTML from Lua.
+ACandy is a pure Lua module for building HTML. Taking advantage of Lua’s syntactic sugar and metatable, it provides an intuitive DSL to build HTML from Lua.
 
 ACandy 是一个构建 HTML 的纯 Lua 模块。利用 Lua 的语法糖和元表，ACandy 提供了一个易用的 DSL 来从 Lua 构建 HTML。
 

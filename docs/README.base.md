@@ -9,7 +9,7 @@ This work uses <a href="https://semver.org/">Semantic Versioning</a> | 本项目
 </div>
 
 <!--@en-->
-ACandy is a pure Lua module for building HTML, which takes advantage of Lua’s syntactic sugar and metatable, giving an intuitive DSL to build HTML from Lua.
+ACandy is a pure Lua module for building HTML. Taking advantage of Lua’s syntactic sugar and metatable, it provides an intuitive DSL to build HTML from Lua.
 
 ACandy 是一个构建 HTML 的纯 Lua 模块。利用 Lua 的语法糖和元表，ACandy 提供了一个易用的 DSL 来从 Lua 构建 HTML。
 
@@ -743,7 +743,7 @@ List-like values are values that can be read as sequences. A value `t` is consid
 - 满足任意一条：
 
   - `t` 是一个[类表值](#类表值)。
-  - `t` 的元表的 `'__acandy_list_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_table_like = true` 设置）。使用者需要确保 `t` 能够：
+  - `t` 的元表的 `'__acandy_list_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_list_like = true` 设置）。使用者需要确保 `t` 能够：
 
     - 通过 `t[k]` 读取内容；
     - 通过 `#t` 获取序列长度；
