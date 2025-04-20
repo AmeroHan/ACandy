@@ -59,7 +59,19 @@ Output (formatted):
 
 In this documentation, strings related to attributes are enclosed in double quotation marks while others single. It's just my personal preference and you can decide for yourself.
 
-## Import
+## Getting started
+
+### Install
+
+ACandy is [available](https://luarocks.org/modules/amero/html) on [LuaRocks](https://luarocks.org) and can be installed with the following command:
+
+```shell
+luarocks install html
+```
+
+Or you can clone this repository and copy the [acandy](/acandy) folder to your Lua module path manually.
+
+### Import
 
 ```lua
 local acandy = require('acandy')

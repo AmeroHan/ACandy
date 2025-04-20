@@ -8,8 +8,8 @@ local DIR = 'docs'
 local NAME = 'README'
 local RAW_PATH = DIR..'/'..NAME..'.base.md'
 local LANGUAGE_VERSIONS = {  ---@type {lang: string, name: string, main: boolean?}[]
-	{lang = 'en', name = 'English', main = true},
-	{lang = 'zh', name = '中文'},
+	{ lang = 'en', name = 'English', main = true },
+	{ lang = 'zh', name = '中文' },
 }
 
 local function get_file_path(lang_ver, base_dir)
@@ -28,7 +28,7 @@ setmetatable(markups, {
 		local function resolver(lines)
 			local res = {}
 			for i, line in ipairs(lines) do
-				res[i] = {text = line, lang = lang}
+				res[i] = { text = line, lang = lang }
 			end
 			return res
 		end
@@ -42,7 +42,7 @@ function markups.LanguageLinks()
 
 	for i, file_ver in ipairs(LANGUAGE_VERSIONS) do
 		local file_lang = file_ver.lang
-		local p = a.p {'🌏 '}
+		local p = a.p { '🌏 ' }
 		local children = p.children
 		for _, link_ver in ipairs(LANGUAGE_VERSIONS) do
 			local link_lang = link_ver.lang
@@ -60,7 +60,7 @@ function markups.LanguageLinks()
 			children:insert(' | ')
 		end
 		children:remove()
-		res[i] = {text = tostring(p), lang = file_lang}
+		res[i] = { text = tostring(p), lang = file_lang }
 	end
 
 	return res
@@ -80,10 +80,10 @@ local function parse_markup(line, line_num)
 		if punc == ':' then
 			error('Invalid markup "'..line..'" at line '..line_num)
 		end
-		return {type = 'end'}
+		return { type = 'end' }
 	end
 	return {
-		type = ({[''] = 'block', [':'] = 'blocks', [';'] = 'right-now'})[punc],
+		type = ({ [''] = 'block', [':'] = 'blocks', [';'] = 'right-now' })[punc],
 		resolver = markups[name],
 	}
 end
@@ -124,18 +124,18 @@ states.TextState = singleton({
 
 		local en_text = line:match('^(.-)  $')
 		if en_text then
-			return states.ZhLineState(), false, {{text = en_text, lang = 'en'}}
+			return states.ZhLineState(), false, { { text = en_text, lang = 'en' } }
 		end
 
 		local common, en_text, zh_text = line:match('^(#*[ \t]*)(.-) | (.+)$')
 		if common then
 			return self, false, {
-				{text = common..en_text, lang = 'en'},
-				{text = common..zh_text, lang = 'zh'},
+				{ text = common..en_text, lang = 'en' },
+				{ text = common..zh_text, lang = 'zh' },
 			}
 		end
 
-		return self, false, {{text = line}}
+		return self, false, { { text = line } }
 	end,
 })
 
@@ -146,7 +146,7 @@ states.ZhLineState = singleton({
 			error('Unexpected markup '..line..' at line '..line_num)
 		end
 
-		return states.TextState(), false, {{text = line, lang = 'zh'}}
+		return states.TextState(), false, { { text = line, lang = 'zh' } }
 	end,
 })
 
@@ -173,7 +173,7 @@ do
 	---@param markup Markup
 	---@return State
 	function states.MarkupStartState(markup)
-		return setmt({markup = markup}, mt)
+		return setmt({ markup = markup }, mt)
 	end
 end
 
@@ -341,7 +341,7 @@ DO NOT edit it directly. Edit ]]..RAW_PATH..[[ instead.
 -->
 ]]
 
-	local res = {note}
+	local res = { note }
 	for _, parsed_line in ipairs(parsed_lines) do
 		if not parsed_line.lang or parsed_line.lang == lang then
 			res[#res+1] = parsed_line.text

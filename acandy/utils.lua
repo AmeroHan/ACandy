@@ -6,7 +6,7 @@ local pairs = pairs
 local ipairs = ipairs
 local s_gsub = string.gsub
 
-local utf8 = utf8 or require('.utf8_polyfill')
+local utf8 = utf8 or require('acandy.utf8_polyfill')
 
 ---Shallow copy a table's sequence part using `ipairs`.
 ---@generic T
@@ -53,7 +53,7 @@ end
 ---@return TOut[]
 function utils.map_varargs(func, ...)
 	local n = select('#', ...)
-	local t = {...}
+	local t = { ... }
 	for i = 1, n do
 		t[i] = func(t[i])
 	end
@@ -119,23 +119,23 @@ local NON_CUSTOM_NAMES = {
 }
 ---defined at https://html.spec.whatwg.org/#prod-pcenchar
 local PCEN_CHAR_RANGES = {
-	{0x2D,    0x2E},  -- '-', '.'
-	{0x30,    0x39},  -- 0-9
-	{0x5F,    0x5F},  -- '_'
-	{0x61,    0x7A},  -- a-z
-	{0xB7,    0xB7},
-	{0xC0,    0xD6},
-	{0xD8,    0xF6},
-	{0xF8,    0x37D},
-	{0x37F,   0x1FFF},
-	{0x200C,  0x200D},
-	{0x203F,  0x2040},
-	{0x2070,  0x218F},
-	{0x2C00,  0x2FEF},
-	{0x3001,  0xD7FF},
-	{0xF900,  0xFDCF},
-	{0xFDF0,  0xFFFD},
-	{0x10000, 0xEFFFF},
+	{ 0x2D,    0x2E },  -- '-', '.'
+	{ 0x30,    0x39 },  -- 0-9
+	{ 0x5F,    0x5F },  -- '_'
+	{ 0x61,    0x7A },  -- a-z
+	{ 0xB7,    0xB7 },
+	{ 0xC0,    0xD6 },
+	{ 0xD8,    0xF6 },
+	{ 0xF8,    0x37D },
+	{ 0x37F,   0x1FFF },
+	{ 0x200C,  0x200D },
+	{ 0x203F,  0x2040 },
+	{ 0x2070,  0x218F },
+	{ 0x2C00,  0x2FEF },
+	{ 0x3001,  0xD7FF },
+	{ 0xF900,  0xFDCF },
+	{ 0xFDF0,  0xFFFD },
+	{ 0x10000, 0xEFFFF },
 }
 ---@param code_point integer
 ---@return boolean
@@ -270,7 +270,7 @@ function utils.extend_env_with_elem_entry(env, elem_entry)
 	if mt then
 		rawset(mt, '__index', to_extended_index(rawget(mt, '__index'), elem_entry))
 	else
-		setmt(env, {__index = to_extended_index(nil, elem_entry)})
+		setmt(env, { __index = to_extended_index(nil, elem_entry) })
 	end
 end
 

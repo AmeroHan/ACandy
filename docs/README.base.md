@@ -56,7 +56,21 @@ Output (formatted): | 输出（经过格式化）：
 In this documentation, strings related to attributes are enclosed in double quotation marks while others single. It's just my personal preference and you can decide for yourself.  
 这篇文档中，代表元素属性的字符串用双引号，其他字符串用单引号，这仅为我的个人习惯，你可以自行决定。
 
-## Import | 导入
+## Getting started | 开始使用
+
+### Install | 安装
+
+ACandy is [available](https://luarocks.org/modules/amero/html) on [LuaRocks](https://luarocks.org) and can be installed with the following command:  
+ACandy 在 [LuaRocks](https://luarocks.org) 上[可用](https://luarocks.org/modules/amero/html)，可以通过以下命令安装：
+
+```shell
+luarocks install html
+```
+
+Or you can clone this repository and copy the [acandy](/acandy) folder to your Lua module path manually.  
+或者你也可以克隆此仓库，手动将 [acandy](/acandy) 文件夹复制到你的 Lua 模块路径下。
+
+### Import | 导入
 
 ```lua
 local acandy = require('acandy')
