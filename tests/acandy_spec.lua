@@ -266,6 +266,38 @@ describe('Built element', function ()
 end)
 
 
+describe('Breadcrumb', function ()
+	it('chains elements', function ()
+		assert.are.equal(
+			tostring(a.div / a.p / a.span / a.a),
+			'<div><p><span><a></a></span></p></div>'
+		)
+		assert.are.equal(
+			tostring(
+				a.div['c1'] / a.p[{ ['data-test'] = 1 }] / a.span['#id'] / a.a[{ ['data-test'] = 2 }]
+			),
+			'<div class="c1"><p data-test="1"><span id="id"><a data-test="2"></a></span></p></div>'
+		)
+	end)
+
+	it('returns breadcrumb or element depending on the last segment', function ()
+		assert.no.error(function ()
+			local elem = a.div / a.p 'content'
+			local _ = elem.children
+		end)
+
+		assert.no.error(function ()
+			local elem = a.div / a.p / 'content'
+			local _ = elem.children
+		end)
+
+		assert.has.error(function ()
+			local _never = a.div / a.p('content') / a.span
+		end)
+	end)
+end)
+
+
 describe('String escaping', function ()
 	local str = '& \194\160 " \' < > &amp; &nbsp; &quot; &apos; &lt; &gt;'
 	local function func_returns_string()

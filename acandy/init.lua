@@ -162,7 +162,7 @@ local function clone_breadcrumb_tags_and_attrs(breadcrumb)
 	local orig_attr_maps = breadcrumb[SYM_ATTR_MAP]
 	for i, tag_name in ipairs(breadcrumb[SYM_TAG_NAME]) do
 		new_tag_names[i] = tag_name
-		new_attr_maps[i] = orig_attr_maps
+		new_attr_maps[i] = orig_attr_maps[i]
 	end
 	return new_tag_names, new_attr_maps
 end
