@@ -15,6 +15,10 @@ DO NOT edit it directly. Edit docs/README.base.md instead.
 
 ACandy 是一个构建 HTML 的纯 Lua 模块。利用 Lua 的语法糖和元表，ACandy 提供了一个易用的 DSL 来从 Lua 构建 HTML。
 
+> [!TIP]
+>
+> 注：本分支为 [Scribunto](https://www.mediawiki.org/wiki/Extension:Scribunto)（即 MediaWiki “Module（模块）”命名空间的 Lua 模块所用环境）特化版本，原始版本请见“main”分支。
+
 ## 瞄一瞄
 
 ```lua
@@ -61,18 +65,12 @@ print(example)
 
 ### 安装
 
-ACandy 在 [LuaRocks](https://luarocks.org) 上[可用](https://luarocks.org/modules/amero/html)，可以通过以下命令安装：
-
-```shell
-luarocks install html
-```
-
-或者你也可以克隆此仓库，手动将 [acandy](/acandy) 文件夹复制到你的 Lua 模块路径下。
+将 [ACandy.lua](/ACandy.lua) 复制到 \[\[Module:ACandy\]\] 页面即可，这是一个多合一的模块，由 [acandy](/acandy/) 文件夹的多个模块合并而来。
 
 ### 导入
 
 ```lua
-local acandy = require('acandy')
+local acandy = require('Module:ACandy')
 local a = acandy.a
 ```
 

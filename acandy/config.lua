@@ -23,7 +23,7 @@ local DEFAULT_CONFIG = {
 	},
 }
 
-local utils = require('Module:ACandy/utils')
+local utils = require('acandy.utils')
 
 local module = {}
 

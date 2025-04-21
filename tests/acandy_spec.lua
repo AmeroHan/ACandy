@@ -1,5 +1,5 @@
 local utils = require('tests.test_utils')
-local acandy = require('acandy')
+local acandy = require('ACandy')
 local a, some, Fragment = acandy.a, acandy.some, acandy.Fragment
 local match_html = utils.match_html
 
