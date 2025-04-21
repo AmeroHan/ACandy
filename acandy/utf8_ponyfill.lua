@@ -1,4 +1,4 @@
----Polyfill for some of functions of `utf8` standard library in Lua 5.3.
+---Ponyfill for some of functions of `utf8` standard library in Lua 5.3.
 
 assert(type(utf8) ~= 'table', 'utf8 module already exists')
 

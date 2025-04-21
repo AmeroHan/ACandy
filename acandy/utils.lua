@@ -6,7 +6,7 @@ local pairs = pairs
 local ipairs = ipairs
 local s_gsub = string.gsub
 
-local utf8 = utf8 or require('acandy.utf8_polyfill')
+local utf8 = utf8 or require('acandy.utf8_ponyfill')
 
 ---Shallow copy a table's sequence part using `ipairs`.
 ---@generic T
