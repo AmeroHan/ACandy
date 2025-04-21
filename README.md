@@ -20,11 +20,13 @@ ACandy 是一个构建 HTML 的纯 Lua 模块。利用 Lua 的语法糖和元表
 > [!NOTE]
 >
 > This branch is a specialized version for [Scribunto](https://www.mediawiki.org/wiki/Extension:Scribunto) (i.e., the Lua module environment used by MediaWiki’s “Module” namespace). The original version can be found in the “main” branch.
+>
+> In addition to the MIT license, the author also authorizes this documentation to be published under the [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)、[CC-BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), and CC-BY-NC-SA 4.0 licenses. Note that these licenses apply to the documentation, while the module source code is still licensed under the [MIT license](/LICENSE).
 
 ## Quick look
 
 ```lua
-local acandy = require 'acandy'
+local acandy = require('Module:ACandy')
 local a, some, Fragment = acandy.a, acandy.some, acandy.Fragment
 
 local example = Fragment {
@@ -61,7 +63,7 @@ Output (formatted):
 </div>
 ```
 
-In this documentation, strings related to attributes are enclosed in double quotation marks while others single. It's just my personal preference and you can decide for yourself.
+In this documentation, strings related to attributes are enclosed in double quotation marks while others single. It’s just my personal preference and you can decide for yourself.
 
 ## Getting started
 
@@ -104,7 +106,7 @@ The output of this code, formatted (the same below), is as follows.
 
 > [!TIP]
 >
-> - You don’t need to handle HTML escaping in strings. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
+> - You don’t need to handle HTML escaping in strings. If you don’t want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
 > - Child nodes do not have to be elements or strings—although only these two types are shown here, any value that can be `tostring` is capable of a child node.
 
 <code>a.*xxx*</code> is [ASCII case-insensitive](https://infra.spec.whatwg.org/#ascii-case-insensitive), thus `a.div`, `a.Div`, `a.DIV`, etc., are the same value (i.e., `rawequal(a.div, a.Div) == true` and `rawequal(a.div, a.DIV) == true`) and will all become `<div></div>`.
@@ -125,7 +127,7 @@ Child nodes are provided to elements through the sequence part of the table. Any
 
 Elements, strings, numbers, booleans, and all other values not mentioned later are applicable to the following rules.
 
-When serializing, `tostring` will be tried on these values and then escape `&`, `<`, `>` and NBSP. If you don't want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
+When serializing, `tostring` will be tried on these values and then escape `&`, `<`, `>` and NBSP. If you don’t want automatic escaping, you can put the content in [`acandy.Raw`](#acandyraw).
 
 In the following example, we use three elements (`<p>`) as child nodes of `<article>`, and use strings, numbers, and booleans as elements of `<p>`. It is trivial to guess the result.
 

@@ -17,12 +17,14 @@ ACandy 是一个构建 HTML 的纯 Lua 模块。利用 Lua 的语法糖和元表
 
 > [!TIP]
 >
-> 注：本分支为 [Scribunto](https://www.mediawiki.org/wiki/Extension:Scribunto)（即 MediaWiki “Module（模块）”命名空间的 Lua 模块所用环境）特化版本，原始版本请见“main”分支。
+> 本分支为 [Scribunto](https://www.mediawiki.org/wiki/Extension:Scribunto)（即 MediaWiki “Module（模块）”命名空间的 Lua 模块所用环境）特化版本，原始版本请见“main”分支。
+>
+> 除了 MIT 协议，作者还授权本文档以 [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.zh-hans)、[CC-BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans) 协议发布，注意这些协议适用于文档，模块源代码仍按 [MIT 协议](/LICENSE)授权。
 
 ## 瞄一瞄
 
 ```lua
-local acandy = require 'acandy'
+local acandy = require('Module:ACandy')
 local a, some, Fragment = acandy.a, acandy.some, acandy.Fragment
 
 local example = Fragment {
