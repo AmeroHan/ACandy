@@ -15,6 +15,10 @@ DO NOT edit it directly. Edit docs/README.base.md instead.
 
 ACandy 是一个构建 HTML 的纯 Lua 模块。利用 Lua 的语法糖和元表，ACandy 提供了一个易用的 DSL 来从 Lua 构建 HTML。
 
+> [!NOTE]
+>
+> 本模块还有 [Scribunto](https://www.mediawiki.org/wiki/Extension:Scribunto)（即 MediaWiki “Module（模块）”命名空间的 Lua 模块所用环境）的特化版本，详见分支“[scribunto](https://github.com/AmeroHan/ACandy/tree/scribunto)”。
+
 ## 瞄一瞄
 
 ```lua

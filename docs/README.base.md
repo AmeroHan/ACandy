@@ -13,6 +13,18 @@ ACandy is a pure Lua module for building HTML. Taking advantage of Lua’s synta
 
 ACandy 是一个构建 HTML 的纯 Lua 模块。利用 Lua 的语法糖和元表，ACandy 提供了一个易用的 DSL 来从 Lua 构建 HTML。
 
+<!--@en-->
+> [!NOTE]
+>
+> This module even has a specialized version for [Scribunto](https://www.mediawiki.org/wiki/Extension:Scribunto) (i.e., the Lua module environment used by MediaWiki’s “Module” namespace). See the branch “[scribunto](https://github.com/AmeroHan/ACandy/tree/scribunto)” for details.
+>
+> 本模块还有 [Scribunto](https://www.mediawiki.org/wiki/Extension:Scribunto)（即 MediaWiki “Module（模块）”命名空间的 Lua 模块所用环境）的特化版本，详见分支“[scribunto](https://github.com/AmeroHan/ACandy/tree/scribunto)”。
+
+<!--@zh-->
+> [!NOTE]
+>
+> 本模块还有 [Scribunto](https://www.mediawiki.org/wiki/Extension:Scribunto)（即 MediaWiki “Module（模块）”命名空间的 Lua 模块所用环境）的特化版本，详见分支“[scribunto](https://github.com/AmeroHan/ACandy/tree/scribunto)”。
+
 ## Quick look | 瞄一瞄
 
 ```lua
