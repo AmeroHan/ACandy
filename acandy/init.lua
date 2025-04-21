@@ -149,7 +149,7 @@ local function Fragment(children)
 	if container_level_of(children) >= 1 then
 		return setmt(utils.copy_ipairs(children), Fragment_mt)
 	end
-	return setmt({children}, Fragment_mt)
+	return setmt({ children }, Fragment_mt)
 end
 
 ---@param breadcrumb Breadcrumb
@@ -162,7 +162,7 @@ local function clone_breadcrumb_tags_and_attrs(breadcrumb)
 	local orig_attr_maps = breadcrumb[SYM_ATTR_MAP]
 	for i, tag_name in ipairs(breadcrumb[SYM_TAG_NAME]) do
 		new_tag_names[i] = tag_name
-		new_attr_maps[i] = orig_attr_maps
+		new_attr_maps[i] = orig_attr_maps[i]
 	end
 	return new_tag_names, new_attr_maps
 end
@@ -350,7 +350,7 @@ local function ACandy(output_type, modify_config)
 		local tag_name = self[SYM_TAG_NAME]
 
 		-- format open tag
-		local result = {'<', tag_name}
+		local result = { '<', tag_name }
 		extend_str_buff_with_attrs(result, self[SYM_ATTR_MAP])
 		result[#result+1] = '>'
 
@@ -510,7 +510,7 @@ local function ACandy(output_type, modify_config)
 		local leaf_elem = BuiltElement(tag_names[n], attr_maps[n] or {}, {})
 		local parent_elem = leaf_elem
 		for i = n - 1, 1, -1 do
-			parent_elem = BuiltElement(tag_names[i], attr_maps[i] or {}, {parent_elem})
+			parent_elem = BuiltElement(tag_names[i], attr_maps[i] or {}, { parent_elem })
 		end
 		return parent_elem, leaf_elem
 	end
@@ -561,7 +561,7 @@ local function ACandy(output_type, modify_config)
 		if void_elems[tag_name] then
 			error('attempt to perform division on a void element', 2)
 		end
-		return breadcrumb_div(Breadcrumb({tag_name}, {rawget(left, SYM_ATTR_MAP)}), right)
+		return breadcrumb_div(Breadcrumb({ tag_name }, { rawget(left, SYM_ATTR_MAP) }), right)
 	end
 
 	BareElement_mt = node_mts:register {

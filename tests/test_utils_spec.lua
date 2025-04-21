@@ -23,13 +23,13 @@ describe('`match_html` function', function ()
 	end)
 
 	it('ignores order within a table arg', function ()
-		assert.is_true(match_html('ab', {'a', 'b'}))
-		assert.is_true(match_html('ba', {'a', 'b'}))
+		assert.is_true(match_html('ab', { 'a', 'b' }))
+		assert.is_true(match_html('ba', { 'a', 'b' }))
 
-		assert.is_false(match_html('a', {'a', 'b'}))
+		assert.is_false(match_html('a', { 'a', 'b' }))
 	end)
 
 	it('can combine strings and tables', function ()
-		assert.is_true(match_html('acbd', 'a', {'b', 'c'}, 'd'))
+		assert.is_true(match_html('acbd', 'a', { 'b', 'c' }, 'd'))
 	end)
 end)

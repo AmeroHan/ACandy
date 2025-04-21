@@ -57,7 +57,19 @@ print(example)
 
 这篇文档中，代表元素属性的字符串用双引号，其他字符串用单引号，这仅为我的个人习惯，你可以自行决定。
 
-## 导入
+## 开始使用
+
+### 安装
+
+ACandy 在 [LuaRocks](https://luarocks.org) 上[可用](https://luarocks.org/modules/amero/html)，可以通过以下命令安装：
+
+```shell
+luarocks install html
+```
+
+或者你也可以克隆此仓库，手动将 [acandy](/acandy) 文件夹复制到你的 Lua 模块路径下。
+
+### 导入
 
 ```lua
 local acandy = require('acandy')
@@ -95,7 +107,7 @@ print(elem)
 > - 你不需要在字符串中处理 HTML 转义。如果不期望自动的转义，可以将内容放在 [`acandy.Raw`](#acandyraw) 中。
 > - 子结点并不必须是元素或字符串——虽然这里只展示了这两类，一切能 `tostring` 的值均可作为子结点。
 
-<code>a.*xxx*</code> 是 [ASCII 大小写不敏感](https://infra.spec.whatwg.org/#ascii-case-insensitive)的，因此 `a.div`、`a.Div`、`a.DIV`……是同一个值（即 `rawequal(a.div, a.Div) == true`、` rawequal(a.div, a.DIV) == true`），它们都将变成`<div></div>`。
+<code>a.*xxx*</code> 是 [ASCII 大小写不敏感](https://infra.spec.whatwg.org/#ascii-case-insensitive)的，因此 `a.div`、`a.Div`、`a.DIV`……是同一个值（即 `rawequal(a.div, a.Div) == true`、`rawequal(a.div, a.DIV) == true`），它们都将变成`<div></div>`。
 
 ### 属性
 
@@ -140,7 +152,7 @@ print(elem)
 
 顺便一提，由 [`acandy.Fragment`](#acandyfragment) 返回的表（如 `Fragment { 1, 2, 3 }`）是类列表的，因为它们的元表的 `'__acandy_list_like'` 字段被设置为 `true`。
 
-特别地，如果一个表不被认为是类列表的，如 `a.p { 1, 2, 3 }` 返回的表，根据[默认规则](默认情形)，它将直接通过 `tostring` 转换为字符串，所以确保它实现了 `__tostring` 元方法。
+特别地，如果一个表不被认为是类列表的，如 `a.p { 1, 2, 3 }` 返回的表，根据[默认规则](#默认情形)，它将直接通过 `tostring` 转换为字符串，所以确保它实现了 `__tostring` 元方法。
 
 ```lua
 local list1 = { '3', '4' }
@@ -529,7 +541,7 @@ local acandy = require('my_acandy')
 - 满足任意一条：
 
   - `t` 是一个[类表值](#类表值)。
-  - `t` 的元表的 `'__acandy_list_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_table_like = true` 设置）。使用者需要确保 `t` 能够：
+  - `t` 的元表的 `'__acandy_list_like'` 字段为 `true`（可通过 `getmetatable(t).__acandy_list_like = true` 设置）。使用者需要确保 `t` 能够：
 
     - 通过 `t[k]` 读取内容；
     - 通过 `#t` 获取序列长度；

@@ -13,7 +13,7 @@ This work uses <a href="https://semver.org/">Semantic Versioning</a>
 </p>
 </div>
 
-ACandy is a pure Lua module for building HTML, which takes advantage of Lua’s syntactic sugar and metatable, giving an intuitive DSL to build HTML from Lua.
+ACandy is a pure Lua module for building HTML. Taking advantage of Lua’s syntactic sugar and metatable, it provides an intuitive DSL to build HTML from Lua.
 
 ACandy 是一个构建 HTML 的纯 Lua 模块。利用 Lua 的语法糖和元表，ACandy 提供了一个易用的 DSL 来从 Lua 构建 HTML。
 
@@ -59,7 +59,19 @@ Output (formatted):
 
 In this documentation, strings related to attributes are enclosed in double quotation marks while others single. It's just my personal preference and you can decide for yourself.
 
-## Import
+## Getting started
+
+### Install
+
+ACandy is [available](https://luarocks.org/modules/amero/html) on [LuaRocks](https://luarocks.org) and can be installed with the following command:
+
+```shell
+luarocks install html
+```
+
+Or you can clone this repository and copy the [acandy](/acandy) folder to your Lua module path manually.
+
+### Import
 
 ```lua
 local acandy = require('acandy')

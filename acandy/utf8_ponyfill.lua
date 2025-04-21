@@ -1,9 +1,9 @@
----Polyfill for some of functions of `utf8` standard library in Lua 5.3.
+---Ponyfill for some of functions of `utf8` standard library in Lua 5.3.
 
 assert(type(utf8) ~= 'table', 'utf8 module already exists')
 
 local MAX_CODE_POINT = 0x10FFFF
-local MIN_CODE_POINT_BY_TAIL_LEN = {0x80, 0x800, 0x10000}
+local MIN_CODE_POINT_BY_TAIL_LEN = { 0x80, 0x800, 0x10000 }
 
 ---@param bytes integer[]
 ---@param pos integer
@@ -65,7 +65,7 @@ end
 ---@param n integer
 ---@return integer?, integer?
 local function code_point_iterator(s, n)
-	local bytes = {s:byte(1, -1)}
+	local bytes = { s:byte(1, -1) }
 	if n <= 0 then  -- first iteration?
 		n = 1  -- start from here
 	elseif n <= #s then

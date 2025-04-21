@@ -8,7 +8,7 @@ describe('Overall test', function ()
 	it('should succeed', function ()
 		local f = Fragment {
 			a.h1['#top heading heading-1'] 'Hello!',
-			a.div {class = "container", style = "margin: 0 auto;",
+			a.div { class = "container", style = "margin: 0 auto;",
 				a.p {
 					'My name is ', a.dfn('ACandy'), ', a module for building HTML.',
 					a.br,
@@ -19,8 +19,8 @@ describe('Overall test', function ()
 			},
 		}
 		assert.is_true(match_html(tostring(f), [[
-			<h1]], {' id="top"', ' class="heading heading-1"'}, [[>Hello!</h1>
-			<div]], {' style="margin: 0 auto;"', ' class="container"'}, [[>
+			<h1]], { ' id="top"', ' class="heading heading-1"' }, [[>Hello!</h1>
+			<div]], { ' style="margin: 0 auto;"', ' class="container"' }, [[>
 				<p>
 					My name is <dfn>ACandy</dfn>, a module for building HTML.<br>
 					Thank you for your visit.
@@ -89,7 +89,7 @@ describe('Base element', function ()
 			a.div.children = {}
 		end)
 		assert.has.error(function ()
-			a.div.attributes = {id = 'id'}
+			a.div.attributes = { id = 'id' }
 		end)
 		assert.has.error(function ()
 			a.div[1] = 'child'
@@ -113,19 +113,19 @@ describe('Building element', function ()
 
 		assert.is_true(match_html(
 			tostring(div['#my-id my-class-1 my-class-2 my-class-3']),
-			'<div', {' id="my-id"', ' class="my-class-1 my-class-2 my-class-3"'}, '></div>'
+			'<div', { ' id="my-id"', ' class="my-class-1 my-class-2 my-class-3"' }, '></div>'
 		))
 		assert.is_true(match_html(
 			tostring(div['my-class-1 #my-id my-class-2 my-class-3']),
-			'<div', {' id="my-id"', ' class="my-class-1 my-class-2 my-class-3"'}, '></div>'
+			'<div', { ' id="my-id"', ' class="my-class-1 my-class-2 my-class-3"' }, '></div>'
 		))
 		assert.is_true(match_html(
 			tostring(div['my-class#my-id']),
-			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
+			'<div', { ' id="my-id"', ' class="my-class"' }, '></div>'
 		))
 		assert.is_true(match_html(
 			tostring(div[' \t\rmy-class\n\f#my-id ']),
-			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
+			'<div', { ' id="my-id"', ' class="my-class"' }, '></div>'
 		))
 	end)
 
@@ -143,8 +143,8 @@ describe('Building element', function ()
 
 	it('can be gotten by indexing a base element with table', function ()
 		assert.is_true(match_html(
-			tostring(div[{id = "my-id", class = "my-class"}]),
-			'<div', {' id="my-id"', ' class="my-class"'}, '></div>'
+			tostring(div[{ id = "my-id", class = "my-class" }]),
+			'<div', { ' id="my-id"', ' class="my-class"' }, '></div>'
 		))
 	end)
 
@@ -176,7 +176,7 @@ describe('Building element', function ()
 			elem.children = {}
 		end)
 		assert.has.error(function ()
-			elem.attributes = {id = 'id'}
+			elem.attributes = { id = 'id' }
 		end)
 		assert.has.error(function ()
 			elem[1] = 'child'
@@ -200,35 +200,35 @@ describe('Built element', function ()
 		end)), '<div>hi</div>')
 
 		assert.are.equal(tostring(a.div(
-			setmetatable({}, {__tostring = function () return 'hi' end})
+			setmetatable({}, { __tostring = function () return 'hi' end })
 		)), '<div>hi</div>')
 
 		assert.is_true(match_html(
 			tostring(a.div {
 				class = "cls", id = "id", ['data-uwu'] = "UwU",
 				'a', 1,
-				{'b', 2},
+				{ 'b', 2 },
 				function ()
-					return {'c', 3, function () return {'d', 4} end}
+					return { 'c', 3, function () return { 'd', 4 } end }
 				end,
 			}),
-			'<div', {' class="cls"', ' id="id"', ' data-uwu="UwU"'}, '>a1b2c3d4</div>'
+			'<div', { ' class="cls"', ' id="id"', ' data-uwu="UwU"' }, '>a1b2c3d4</div>'
 		))
 	end)
 
 	it('can come from building element', function ()
-		local building = a.div[{class = "cls"}]
+		local building = a.div[{ class = "cls" }]
 		assert.are.equal(tostring(building()), '<div class="cls"></div>')
 		assert.are.equal(tostring(building('hi')), '<div class="cls">hi</div>')
 		assert.is_true(match_html(
-			tostring(building({class = "new", id = "id", 'hi'})),
-			'<div', {' class="new"', ' id="id"'}, '>hi</div>'
+			tostring(building({ class = "new", id = "id", 'hi' })),
+			'<div', { ' class="new"', ' id="id"' }, '>hi</div>'
 		))
 		assert.are.equal(tostring(building {
 			'a', 1,
-			{'b', 2},
+			{ 'b', 2 },
 			function ()
-				return {'c', 3, function () return {'d', 4} end}
+				return { 'c', 3, function () return { 'd', 4 } end }
 			end,
 		}), '<div class="cls">a1b2c3d4</div>')
 	end)
@@ -240,7 +240,7 @@ describe('Built element', function ()
 
 	it('has properties', function ()
 		local li = a.li 'item 1'
-		local list = a.ol {id = "my-id", li}
+		local list = a.ol { id = "my-id", li }
 
 		-- get
 		assert.are.equal(list.tag_name, 'ol')
@@ -256,12 +256,44 @@ describe('Built element', function ()
 		list.attributes.id = 'new-id'
 		list.style = 'color: blue;'
 		assert.is_true(match_html(tostring(list), [[
-			<ul]], {' id="new-id"', ' style="color: blue;"'}, [[>
+			<ul]], { ' id="new-id"', ' style="color: blue;"' }, [[>
 				<li>item 1</li>
 				<li>item 2</li>
 				<li>item 3</li>
 			</ul>
 		]]))
+	end)
+end)
+
+
+describe('Breadcrumb', function ()
+	it('chains elements', function ()
+		assert.are.equal(
+			tostring(a.div / a.p / a.span / a.a),
+			'<div><p><span><a></a></span></p></div>'
+		)
+		assert.are.equal(
+			tostring(
+				a.div['c1'] / a.p[{ ['data-test'] = 1 }] / a.span['#id'] / a.a[{ ['data-test'] = 2 }]
+			),
+			'<div class="c1"><p data-test="1"><span id="id"><a data-test="2"></a></span></p></div>'
+		)
+	end)
+
+	it('returns breadcrumb or element depending on the last segment', function ()
+		assert.no.error(function ()
+			local elem = a.div / a.p 'content'
+			local _ = elem.children
+		end)
+
+		assert.no.error(function ()
+			local elem = a.div / a.p / 'content'
+			local _ = elem.children
+		end)
+
+		assert.has.error(function ()
+			local _never = a.div / a.p('content') / a.span
+		end)
 	end)
 end)
 
@@ -272,7 +304,7 @@ describe('String escaping', function ()
 		return str
 	end
 	-- issue: #11
-	local table_with_tostring = setmetatable({}, {__tostring = func_returns_string})
+	local table_with_tostring = setmetatable({}, { __tostring = func_returns_string })
 
 	it('replaces `& NBSP " < >` in attribute values with named references', function ()
 		local answer = '<div class="'
@@ -280,10 +312,10 @@ describe('String escaping', function ()
 			..'&amp;amp; &amp;nbsp; &amp;quot; &amp;apos; &amp;lt; &amp;gt;'
 			..'"></div>'
 		assert.are.equal(tostring(a.div[str]), answer)
-		assert.are.equal(tostring(a.div[{class = str}]), answer)
-		assert.are.equal(tostring(a.div[{class = table_with_tostring}]), answer)
-		assert.are.equal(tostring(a.div {class = str}), answer)
-		assert.are.equal(tostring(a.div {class = table_with_tostring}), answer)
+		assert.are.equal(tostring(a.div[{ class = str }]), answer)
+		assert.are.equal(tostring(a.div[{ class = table_with_tostring }]), answer)
+		assert.are.equal(tostring(a.div { class = str }), answer)
+		assert.are.equal(tostring(a.div { class = table_with_tostring }), answer)
 	end)
 
 	it('replaces `& NBSP < >` in texts other than attribute value with named references', function ()
@@ -301,7 +333,7 @@ describe('String escaping', function ()
 		assert.are.equal(tostring(a.div(node1)), '<div>'..tostring(node1)..'</div>')
 		local node2 = acandy.Doctype.HTML
 		assert.are.equal(
-			tostring(Fragment {node2, a.html {a.head, a.body}}),
+			tostring(Fragment { node2, a.html { a.head, a.body } }),
 			tostring(node2)..'<html><head></head><body></body></html>'
 		)
 		local node3 = acandy.Comment(str)
@@ -367,7 +399,7 @@ describe('`acandy.Doctype`', function ()
 	local Doctype = acandy.Doctype
 	it('has HTML5 doctype', function ()
 		assert.are.equal(tostring(Doctype.HTML), '<!DOCTYPE html>')
-		assert.are.equal(tostring(Fragment {Doctype.HTML, a.html}), '<!DOCTYPE html><html></html>')
+		assert.are.equal(tostring(Fragment { Doctype.HTML, a.html }), '<!DOCTYPE html><html></html>')
 	end)
 end)
 
@@ -377,7 +409,7 @@ describe('`acandy.Raw`', function ()
 		local raw = acandy.Raw(str)
 		assert.are.equal(tostring(raw), str)
 		assert.are.equal(tostring(a.div(raw)), '<div>'..str..'</div>')
-		assert.are.equal(tostring(a.div {raw}), '<div>'..str..'</div>')
+		assert.are.equal(tostring(a.div { raw }), '<div>'..str..'</div>')
 	end)
 
 	it('can concat with another `Raw`, returns `Raw`', function ()
