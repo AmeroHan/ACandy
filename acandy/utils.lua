@@ -101,8 +101,6 @@ local NON_CUSTOM_NAMES = {
 	['font-face-name'] = true,
 	['missing-glyph'] = true,
 }
-
---[[ Unneeded for MW
 ---defined at https://html.spec.whatwg.org/#prod-pcenchar
 local PCEN_CHAR_RANGES = {
 	{ 0x2D,    0x2E },  -- '-', '.'
@@ -133,7 +131,6 @@ local function is_pcen_char_code(code_point)
 	end
 	return false
 end
-]]
 
 ---Return truthy value when `name` is a valid HTML tag name, otherwise falsy value.
 ---
@@ -150,8 +147,6 @@ function utils.is_html_tag_name(name)
 	elseif NON_CUSTOM_NAMES[name:lower()] then
 		return true
 	end
-
-	--[[ Unneeded for MW
 	---@cast name string
 	local subs1, subs2 = name:match('^%l(.*)%-(.*)$')
 	if not subs1 then
@@ -164,7 +159,7 @@ function utils.is_html_tag_name(name)
 		if s:find('^[%-%.%d_%l]*$') then
 			return true
 		end
-		for _, cp in utf8.codes(s) do
+		for cp in mw.ustring.gcodepoint(s) do
 			if not is_pcen_char_code(cp) then
 				return false
 			end
@@ -173,8 +168,6 @@ function utils.is_html_tag_name(name)
 	end
 
 	return validate(subs1) and validate(subs2)
-	]]
-	return false
 end
 
 ---Return truthy value when `name` is a valid HTML attribute name, otherwise falsy value.

@@ -688,6 +688,7 @@ local function ACandy(output_type, modify_config)
 		a = a,
 		some = some,
 		Comment = classes.Comment,
+		Doctype = classes.Doctype,
 		Fragment = Fragment,
 		Raw = classes.Raw,
 	}
@@ -700,6 +701,7 @@ local ACANDY_EXPORTED_NAMES = {
 	some = true,
 	-- classes
 	Comment = true,
+	Doctype = true,
 	Fragment = true,
 	Raw = true,
 }

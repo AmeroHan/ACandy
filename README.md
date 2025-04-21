@@ -462,6 +462,105 @@ print(elem)
 <p>Hello, <!--This is a comment.-->world!<!----></p>
 ```
 
+### `acandy.Doctype`
+
+Currently only the HTML5 doctype is supported. It is accessed by `Doctype.HTML`.
+
+```lua
+tostring(acandy.Doctype.HTML)  --> '<!DOCTYPE html>'
+```
+
+## Environmental methods
+
+### `acandy.extend_env`
+
+```lua
+function acandy.extend_env(env: table): ()
+```
+
+Extend the environment in place with `acandy.a` as `__index`, e.g., `_ENV`. This makes it possible to directly use the tag name rather than tediously type `a.`, unless there is a naming conflict with local variables or global variables.
+
+> [!WARNING]
+>
+> It is not recommended to use this method on the global environment, as it may cause hard-to-detect naming conflicts.
+
+```lua
+local acandy = require 'acandy'
+local a = acandy.a
+acandy.extend_env(_G)
+
+print(
+   -- normally you can access an element without `a.`
+   div {
+      -- use `a.table` to avoid the naming conflict with Lua's `table` module (a global value)
+      a.table {
+         tr { td 'foo' },
+      },
+      -- or use a different case
+      TABLE {
+         tr { td 'bar' },
+      }
+      ul {
+         -- use `a.a` to avoid the naming conflict with `a` from `acandy` (a local value)
+         li / a.a { href="/home", 'Home' },
+         -- or use a different case
+         li / A { href="/about", 'About' },
+      }
+   }
+)
+```
+
+```html
+<div>
+   <table>
+      <tr><td>foo</td></tr>
+   </table>
+   <table>
+      <tr><td>bar</td></tr>
+   </table>
+   <ul>
+      <li><a href="/home">Home</a></li>
+      <li><a href="/about">About</a></li>
+   </ul>
+</div>
+```
+
+### `acandy.to_extended_env`
+
+```lua
+function acandy.to_extended_env(env: table): table
+```
+
+Similar to `acandy.extend_env`, but returns a new table instead of modifying the original table.
+
+```lua
+local get_article = setfenv(function ()
+   return (
+      article {
+         header / h2 'Title',
+         main {
+            p 'Paragraph 1',
+            p 'Paragraph 2',
+         }
+      }
+   )
+end, acandy.to_extended_env(_G))
+
+print(get_article())
+```
+
+```html
+<article>
+   <header>
+      <h2>Title</h2>
+   </header>
+   <main>
+      <p>Paragraph 1</p>
+      <p>Paragraph 2</p>
+   </main>
+</article>
+```
+
 ## Configuration
 
 ACandy defaults to HTML mode (currently only HTML mode, XML will be supported in the future), and has predefined some HTML void elements and raw text elements (see [config.lua](/config.lua)).
