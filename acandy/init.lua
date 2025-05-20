@@ -27,7 +27,7 @@ local classes = require('acandy.classes')
 local node_mts = classes.node_mts
 local config_module = require('acandy.config')
 
----@class Symbol
+---@class (exact) Symbol
 
 local SYM_STRING = classes.SYM_STRING
 local SYM_ATTR_MAP = {}  ---@type Symbol
@@ -53,16 +53,16 @@ local function container_level_of(v)
 end
 
 
----Append the serialized string of the Fragment to `buff`.
----Use len to avoid calling `#buff` repeatedly. This improves performance by
+---Append the serialized string of the Fragment to `buf`.
+---Use len to avoid calling `#buf` repeatedly. This improves performance by
 ---~1/3.
----@param buff table
----@param frag table
----@param buff_len? integer length of `buff`, used to optimize performance.
+---@param buf string[]
+---@param frag any[]
+---@param buf_len? integer length of `buf`, used to optimize performance.
 ---@param no_encode? boolean true to prevent encoding strings, e.g. when in <script>.
-local function extend_str_buff_with_frag(buff, frag, buff_len, no_encode)
+local function extend_str_buf_with_frag(buf, frag, buf_len, no_encode)
 	if #frag == 0 then return end
-	buff_len = buff_len or #buff
+	buf_len = buf_len or #buf
 
 	local function append_serialized(node)
 		local node_type = type(node)
@@ -73,44 +73,44 @@ local function extend_str_buff_with_frag(buff, frag, buff_len, no_encode)
 		elseif node_type == 'function' then
 			append_serialized(node())
 		elseif node_type == 'string' then
-			buff_len = buff_len + 1
-			buff[buff_len] = no_encode and node or utils.html_encode(node)
+			buf_len = buf_len + 1
+			buf[buf_len] = no_encode and node or utils.html_encode(node)
 		else  -- others: Raw, Element, boolean, number
 			local str = tostring(node)
 			if not (node_mts[getmt(node)] or no_encode) then
 				str = utils.html_encode(str)
 			end
-			buff_len = buff_len + 1
-			buff[buff_len] = str
+			buf_len = buf_len + 1
+			buf[buf_len] = str
 		end
 	end
 
 	append_serialized(frag)
 end
 
----@param buff string[]
+---@param buf string[]
 ---@param attr_map {[string]: string | number | boolean}
----@param buff_len integer?
----@return integer new_buff_len
-local function extend_str_buff_with_attrs(buff, attr_map, buff_len)
-	buff_len = buff_len or #buff
+---@param buf_len integer?
+---@return integer new_buf_len
+local function extend_str_buf_with_attrs(buf, attr_map, buf_len)
+	buf_len = buf_len or #buf
 	for k, v in pairs(attr_map) do
 		if v == true then
 			-- boolean attributes
 			-- https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes#boolean_attributes
-			buff_len = buff_len + 2
-			buff[buff_len - 1] = ' '
-			buff[buff_len] = k
+			buf_len = buf_len + 2
+			buf[buf_len - 1] = ' '
+			buf[buf_len] = k
 		elseif v then  -- exclude the case `v == false`
-			buff_len = buff_len + 5
-			buff[buff_len - 4] = ' '
-			buff[buff_len - 3] = k
-			buff[buff_len - 2] = '="'
-			buff[buff_len - 1] = utils.attr_encode(tostring(v))
-			buff[buff_len] = '"'
+			buf_len = buf_len + 5
+			buf[buf_len - 4] = ' '
+			buf[buf_len - 3] = k
+			buf[buf_len - 2] = '="'
+			buf[buf_len - 1] = utils.attr_encode(tostring(v))
+			buf[buf_len] = '"'
 		end
 	end
-	return buff_len
+	return buf_len
 end
 
 
@@ -121,9 +121,9 @@ local Fragment_mt = node_mts:register {
 	__tostring = function (self)
 		if #self == 0 then return '' end
 
-		local buff = {}
-		extend_str_buff_with_frag(buff, self, 0)
-		return concat(buff)
+		local buf = {}
+		extend_str_buf_with_frag(buf, self, 0)
+		return concat(buf)
 	end,
 	---ACandy fragment.
 	---@class Fragment<T>: {[integer]: T}
@@ -196,7 +196,7 @@ local function breadcrumb_to_string(self)
 		result[#result+1] = '><'
 		result[#result+1] = tag_name
 		if attr_maps[i] then
-			extend_str_buff_with_attrs(result, attr_maps[i])
+			extend_str_buf_with_attrs(result, attr_maps[i])
 		end
 	end
 	result[1] = '<'
@@ -351,7 +351,7 @@ local function ACandy(output_type, modify_config)
 
 		-- format open tag
 		local result = { '<', tag_name }
-		extend_str_buff_with_attrs(result, self[SYM_ATTR_MAP])
+		extend_str_buf_with_attrs(result, self[SYM_ATTR_MAP])
 		result[#result+1] = '>'
 
 		-- return without children or close tag when being a void element
@@ -361,7 +361,7 @@ local function ACandy(output_type, modify_config)
 		end
 
 		-- format children
-		extend_str_buff_with_frag(result, self[SYM_CHILDREN], nil, raw_text_elems[tag_name])
+		extend_str_buf_with_frag(result, self[SYM_CHILDREN], nil, raw_text_elems[tag_name])
 		-- format close tag
 		result[#result+1] = '</'
 		result[#result+1] = tag_name
@@ -662,7 +662,7 @@ local function ACandy(output_type, modify_config)
 	---@class SomeElementsEntry
 	---@field [string] SomeBareElements
 	local some = setmt({}, {
-		__index = function (_, key)
+		__index = function (self, key)
 			local bare_elem = a[key]
 			local mt = {}
 
@@ -679,7 +679,9 @@ local function ACandy(output_type, modify_config)
 				return setmt(utils.map_varargs(bare_elem, ...), Fragment_mt)
 			end
 
-			return setmt({}, mt)
+			local ret = setmt({}, mt)
+			self[key] = ret
+			return ret
 		end,
 	})
 
